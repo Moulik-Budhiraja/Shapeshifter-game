@@ -1,19 +1,36 @@
 import pygame
 pygame.init()
 
-multiplyer = 70
-
-WIDTH = 16 * multiplyer
-HEIGHT = 9 * multiplyer
+WIDTH = 1120
+HEIGHT = 630
 
 WIN = pygame.display.set_mode((WIDTH, HEIGHT))
 
-print(WIDTH, HEIGHT)
 
-while True:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            pygame.quit()
-            quit()
+class Game:
+    def __init__(self, width, height):
+        self.width = width
+        self.height = height
 
-    pygame.display.update()
+    def run(self):
+        self.setup()
+        self.loop()
+
+    def setup(self):
+
+        self.running = True
+
+    def loop(self):
+        while self.running():
+            self.update()
+            self.draw()
+
+    def update(self):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+
+    def draw(self):
+        WIN.fill((0, 0, 0))
+        pygame.display.update()
