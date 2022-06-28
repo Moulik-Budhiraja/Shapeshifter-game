@@ -1,6 +1,6 @@
-from lib2to3.pytree import Base
 import pygame
 from constants import *
+import os
 
 
 class BaseCharacter:
@@ -19,6 +19,8 @@ class BaseCharacter:
 
         self.x_accel = 0
         self.y_accel = 0
+
+        self.frame = 0
 
     def handle_movement(self, keys):
         pass
@@ -48,21 +50,55 @@ class BaseCharacter:
         new.x_accel = self.x_accel
         new.y_accel = self.y_accel
 
+        new.frame = self.frame
+
         return new
 
+    def _get_image(self):
+        return self.image
+
     def draw(self, win):
-        win.blit(self.image, (self.x, self.y))
+        win.blit(self._get_image(), (self.x, self.y))
+
+        self.frame += 1
 
 
 class Blob(BaseCharacter):
     def __init__(self, pos: tuple, size: tuple, max_health=100):
         super().__init__(pos, size, max_health)
-        self.image = Fonts.CHARACTER.render("BLOB", True, Colors.WHITE)
-        self.image = pygame.transform.scale(
-            self.image, (self.width, self.height))
 
         self.jumping = False
         self.jump_vel = 12
+
+        # Load images
+        try:
+            self.idle_image = pygame.image.load(os.path.join(
+                "assets", "images", "characters", "blob", "SG Idle.png"))
+
+            self.jumping_right_images = [pygame.image.load(os.path.join(
+                "assets", "images", "characters", "blob", "Jumping", f"SG Jump {i}.png")) for i in range(1, 8)]
+
+            self.walking_right_images = [pygame.image.load(os.path.join(
+                "assets", "images", "characters", "blob", "Walking", f"SG Walk {i}.png")) for i in range(1, 4)]
+        except FileNotFoundError:
+            self.idle_image = pygame.image.load(os.path.join(
+                "..", "assets", "images", "characters", "blob", "SG Idle.png"))
+
+            self.jumping_right_images = [pygame.image.load(os.path.join(
+                "..", "assets", "images", "characters", "blob", "Jumping", f"SG Jump {i}.png")) for i in range(1, 8)]
+
+            self.walking_right_images = [pygame.image.load(os.path.join(
+                "..", "assets", "images", "characters", "blob", "Walking", f"SG Walk {i}.png")) for i in range(1, 4)]
+
+        self.jumping_left_images = [pygame.transform.flip(
+            image, True, False) for image in self.jumping_right_images]
+
+        self.walking_left_images = [pygame.transform.flip(
+            image, True, False) for image in self.walking_right_images]
+
+    @property
+    def rect(self):
+        return pygame.Rect(self.x, self.y, self.width, self.height)
 
     def handle_movement(self, keys):
         if keys[pygame.K_LEFT] == keys[pygame.K_RIGHT]:
@@ -84,7 +120,7 @@ class Blob(BaseCharacter):
         # If not colliding with terrain
 
         if self.jumping:
-            self.y_accel = 0.8
+            self.y_accel = 0.6
         else:
             self.y_accel = 0
 
@@ -96,14 +132,85 @@ class Blob(BaseCharacter):
         elif self.x_vel < -5:
             self.x_vel = -5
 
-        self.y_vel = round(self.y_vel, 1)
+        if abs(self.x_vel) < 0.02:
+            self.x_vel = 0
+
+        self.y_vel = round(self.y_vel, 2)
+        self.x_vel = round(self.x_vel, 2)
 
         if self.y_vel == self.jump_vel:
             self.jumping = False
             self.y_vel = 0
 
-        self.x += round(self.x_vel)
-        self.y += self.y_vel
+        self.x += round(self.x_vel, 0)
+        self.y += round(self.y_vel, 0)
+
+    def _get_image(self):
+        if self.jumping:
+            if self.x_vel >= 0:
+                if self.y_vel < -self.jump_vel + 1:
+                    self.image = self.jumping_right_images[0]
+                elif self.y_vel < -self.jump_vel + 2:
+                    self.image = self.jumping_right_images[1]
+                elif self.y_vel < -self.jump_vel + self.jump_vel * 0.85:
+                    self.image = self.jumping_right_images[2]
+                elif self.y_vel < -self.jump_vel + self.jump_vel * 1.15:
+                    self.image = self.jumping_right_images[3]
+                elif self.y_vel < -self.jump_vel + self.jump_vel * 1.75:
+                    self.image = self.jumping_right_images[4]
+                elif self.y_vel < -self.jump_vel + self.jump_vel * 1.85:
+                    self.image = self.jumping_right_images[5]
+                elif self.y_vel < -self.jump_vel + self.jump_vel * 2:
+                    self.image = self.jumping_right_images[6]
+
+            elif self.x_vel < 0:
+                if self.y_vel < -self.jump_vel + 1:
+                    self.image = self.jumping_left_images[0]
+                elif self.y_vel < -self.jump_vel + 2:
+                    self.image = self.jumping_left_images[1]
+                elif self.y_vel < -self.jump_vel + self.jump_vel * 0.85:
+                    self.image = self.jumping_left_images[2]
+                elif self.y_vel < -self.jump_vel + self.jump_vel * 1.15:
+                    self.image = self.jumping_left_images[3]
+                elif self.y_vel < -self.jump_vel + self.jump_vel * 1.75:
+                    self.image = self.jumping_left_images[4]
+                elif self.y_vel < -self.jump_vel + self.jump_vel * 1.85:
+                    self.image = self.jumping_left_images[5]
+                elif self.y_vel < -self.jump_vel + self.jump_vel * 2:
+                    self.image = self.jumping_left_images[6]
+
+        else:
+            rounded_frame = self.frame % 20
+            if round(self.x_vel, 0) > 0:
+                if rounded_frame > 15:
+                    self.image = self.walking_right_images[1]
+                elif rounded_frame > 10:
+                    self.image = self.walking_right_images[2]
+                elif rounded_frame > 5:
+                    self.image = self.walking_right_images[1]
+                else:
+                    self.image = self.walking_right_images[0]
+
+            elif round(self.x_vel, 0) < 0:
+                if rounded_frame > 15:
+                    self.image = self.walking_left_images[1]
+                elif rounded_frame > 10:
+                    self.image = self.walking_left_images[2]
+                elif rounded_frame > 5:
+                    self.image = self.walking_left_images[1]
+                else:
+                    self.image = self.walking_left_images[0]
+            else:
+                self.image = self.idle_image
+                self.frame = 0
+
+        return self.image
+
+    def draw(self, win):
+        win.blit(self._get_image(), (self.x, self.y -
+                 (self._get_image().get_height() - self.idle_image.get_height())))
+
+        self.frame += 1
 
 
 class Airplane(BaseCharacter):
