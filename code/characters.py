@@ -84,7 +84,7 @@ class Blob(BaseCharacter):
         # If not colliding with terrain
 
         if self.jumping:
-            self.y_accel = 0.6
+            self.y_accel = 0.8
         else:
             self.y_accel = 0
 
@@ -104,8 +104,6 @@ class Blob(BaseCharacter):
 
         self.x += round(self.x_vel)
         self.y += self.y_vel
-
-        print(self.y_vel, self.y)
 
 
 class Airplane(BaseCharacter):
