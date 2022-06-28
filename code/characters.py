@@ -62,15 +62,19 @@ class Blob(BaseCharacter):
             self.image, (self.width, self.height))
 
         self.jumping = False
-        self.jump_vel = 8
+        self.jump_vel = 12
 
     def handle_movement(self, keys):
         if keys[pygame.K_LEFT] == keys[pygame.K_RIGHT]:
-            self.x_accel = 0
+            self.x_accel = -self.x_vel * 0.05
+
+            if not self.jumping:
+                self.x_accel = -self.x_vel * 0.2
+
         elif keys[pygame.K_LEFT]:
-            self.x_accel = -1
+            self.x_accel = -2.5
         elif keys[pygame.K_RIGHT]:
-            self.x_accel = 1
+            self.x_accel = 2.5
 
         if keys[pygame.K_UP]:
             if not self.jumping:
@@ -80,17 +84,17 @@ class Blob(BaseCharacter):
         # If not colliding with terrain
 
         if self.jumping:
-            self.y_accel = 0.2
+            self.y_accel = 0.6
         else:
             self.y_accel = 0
 
         self.y_vel += self.y_accel
         self.x_vel += self.x_accel
 
-        if self.x_vel > 3:
-            self.x_vel = 3
-        elif self.x_vel < -3:
-            self.x_vel = -3
+        if self.x_vel > 5:
+            self.x_vel = 5
+        elif self.x_vel < -5:
+            self.x_vel = -5
 
         self.y_vel = round(self.y_vel, 1)
 
@@ -98,7 +102,7 @@ class Blob(BaseCharacter):
             self.jumping = False
             self.y_vel = 0
 
-        self.x += self.x_vel
+        self.x += round(self.x_vel)
         self.y += self.y_vel
 
         print(self.y_vel, self.y)
