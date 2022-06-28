@@ -1,7 +1,7 @@
 import pygame
 pygame.init()
 
-multiplyer = 50
+multiplyer = 70
 
 WIDTH = 16 * multiplyer
 HEIGHT = 9 * multiplyer
