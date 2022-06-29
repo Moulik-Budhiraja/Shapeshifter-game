@@ -81,9 +81,21 @@ class Fonts:
     CHARACTER = pygame.font.SysFont("Lato", 30)
 
 
+class Screen:
+    WIDTH = 1120
+    HEIGHT = 630
+
+
 class CharacterType(Enum):
     BLOB = auto()
     AIRPLANE = auto()
     SPRING = auto()
     WEIGHT = auto()
     PLUNGER = auto()
+
+
+class Direction(Enum):
+    UP = auto()
+    DOWN = auto()
+    LEFT = auto()
+    RIGHT = auto()

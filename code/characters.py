@@ -1,4 +1,5 @@
 import pygame
+from level import Level
 from constants import *
 import os
 
@@ -10,6 +11,8 @@ class BaseCharacter:
         self.max_health = max_health
         self.health = max_health
 
+        self.type = None
+
         self.image = Fonts.CHARACTER.render("BASECHR", True, Colors.WHITE)
         self.image = pygame.transform.scale(
             self.image, (self.width, self.height))
@@ -18,9 +21,13 @@ class BaseCharacter:
         self.y_vel = 0
 
         self.x_accel = 0
-        self.y_accel = 0
+        self.y_accel = 0.6
 
         self.frame = 0
+
+    @property
+    def rect(self):
+        return pygame.Rect(self.x, self.y, self.width, self.height)
 
     def handle_movement(self, keys):
         pass
@@ -57,6 +64,18 @@ class BaseCharacter:
     def _get_image(self):
         return self.image
 
+    def kill(self, level):
+        level = Level.get_level(level)
+
+        self.x = level.start_x
+        self.y = level.start_y
+
+        self.x_vel = 0
+        self.y_vel = 0
+
+        self.y_accel = 0.6
+        self.x_accel = 0
+
     def draw(self, win):
         win.blit(self._get_image(), (self.x, self.y))
 
@@ -66,6 +85,8 @@ class BaseCharacter:
 class Blob(BaseCharacter):
     def __init__(self, pos: tuple, size: tuple, max_health=100):
         super().__init__(pos, size, max_health)
+
+        self.type = CharacterType.BLOB
 
         self.jumping = False
         self.jump_vel = 12
@@ -96,11 +117,7 @@ class Blob(BaseCharacter):
         self.walking_left_images = [pygame.transform.flip(
             image, True, False) for image in self.walking_right_images]
 
-    @property
-    def rect(self):
-        return pygame.Rect(self.x, self.y, self.width, self.height)
-
-    def handle_movement(self, keys):
+    def handle_movement(self, keys, level):
         if keys[pygame.K_LEFT] == keys[pygame.K_RIGHT]:
             self.x_accel = -self.x_vel * 0.05
 
@@ -117,33 +134,31 @@ class Blob(BaseCharacter):
                 self.jumping = True
                 self.y_vel = -self.jump_vel
 
-        # If not colliding with terrain
-
-        if self.jumping:
-            self.y_accel = 0.6
-        else:
-            self.y_accel = 0
-
         self.y_vel += self.y_accel
-        self.x_vel += self.x_accel
 
-        if self.x_vel > 5:
-            self.x_vel = 5
-        elif self.x_vel < -5:
-            self.x_vel = -5
+        if abs(self.x_vel) < 5 or self.x_vel == 0 or self.x_accel == 0 or self.x_vel / abs(self.x_vel) != self.x_accel / abs(self.x_accel):
+            self.x_vel += self.x_accel
+        else:
+            self.x_vel += -self.x_vel * 0.05
 
         if abs(self.x_vel) < 0.02:
             self.x_vel = 0
 
+        self.y_accel = 0.6
+
         self.y_vel = round(self.y_vel, 2)
         self.x_vel = round(self.x_vel, 2)
 
-        if self.y_vel == self.jump_vel:
-            self.jumping = False
-            self.y_vel = 0
-
         self.x += round(self.x_vel, 0)
         self.y += round(self.y_vel, 0)
+
+        self.jumping = True
+
+        self.handle_collisions(level)
+
+    def handle_collisions(self, level):
+        for terrain in Level.get_level(level).terrain:
+            terrain.handle_collision(self)
 
     def _get_image(self):
         if self.jumping:
@@ -156,12 +171,8 @@ class Blob(BaseCharacter):
                     self.image = self.jumping_right_images[2]
                 elif self.y_vel < -self.jump_vel + self.jump_vel * 1.15:
                     self.image = self.jumping_right_images[3]
-                elif self.y_vel < -self.jump_vel + self.jump_vel * 1.75:
+                else:
                     self.image = self.jumping_right_images[4]
-                elif self.y_vel < -self.jump_vel + self.jump_vel * 1.85:
-                    self.image = self.jumping_right_images[5]
-                elif self.y_vel < -self.jump_vel + self.jump_vel * 2:
-                    self.image = self.jumping_right_images[6]
 
             elif self.x_vel < 0:
                 if self.y_vel < -self.jump_vel + 1:
@@ -172,12 +183,8 @@ class Blob(BaseCharacter):
                     self.image = self.jumping_left_images[2]
                 elif self.y_vel < -self.jump_vel + self.jump_vel * 1.15:
                     self.image = self.jumping_left_images[3]
-                elif self.y_vel < -self.jump_vel + self.jump_vel * 1.75:
+                else:
                     self.image = self.jumping_left_images[4]
-                elif self.y_vel < -self.jump_vel + self.jump_vel * 1.85:
-                    self.image = self.jumping_left_images[5]
-                elif self.y_vel < -self.jump_vel + self.jump_vel * 2:
-                    self.image = self.jumping_left_images[6]
 
         else:
             rounded_frame = self.frame % 20
@@ -216,6 +223,9 @@ class Blob(BaseCharacter):
 class Airplane(BaseCharacter):
     def __init__(self, pos: tuple, size: tuple, max_health=100):
         super().__init__(pos, size, max_health)
+
+        self.type = CharacterType.AIRPLANE
+
         self.image = Fonts.CHARACTER.render("AIRPLANE", True, Colors.WHITE)
         self.image = pygame.transform.scale(
             self.image, (self.width, self.height))
@@ -224,6 +234,9 @@ class Airplane(BaseCharacter):
 class Spring(BaseCharacter):
     def __init__(self, pos: tuple, size: tuple, max_health=100):
         super().__init__(pos, size, max_health)
+
+        self.type = CharacterType.SPRING
+
         self.image = Fonts.CHARACTER.render("SPRING", True, Colors.WHITE)
         self.image = pygame.transform.scale(
             self.image, (self.width, self.height))
@@ -232,6 +245,9 @@ class Spring(BaseCharacter):
 class Weight(BaseCharacter):
     def __init__(self, pos: tuple, size: tuple, max_health=100):
         super().__init__(pos, size, max_health)
+
+        self.type = CharacterType.WEIGHT
+
         self.image = Fonts.CHARACTER.render("WEIGHT", True, Colors.WHITE)
         self.image = pygame.transform.scale(
             self.image, (self.width, self.height))
@@ -240,6 +256,9 @@ class Weight(BaseCharacter):
 class Plunger(BaseCharacter):
     def __init__(self, pos: tuple, size: tuple, max_health=100):
         super().__init__(pos, size, max_health)
+
+        self.type = CharacterType.PLUNGER
+
         self.image = Fonts.CHARACTER.render("PLUNGER", True, Colors.WHITE)
         self.image = pygame.transform.scale(
             self.image, (self.width, self.height))

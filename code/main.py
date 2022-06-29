@@ -1,6 +1,8 @@
 import pygame
 from constants import *
 from characters import Blob, Airplane, Spring, Weight, Plunger
+from level import Level
+import levels
 pygame.init()
 
 
@@ -16,7 +18,12 @@ class Game:
         self.loop()
 
     def setup(self):
-        self.character = Blob((WIDTH / 2, HEIGHT / 2), (60, 60))
+        self.character = Blob((Screen.WIDTH / 2, Screen.HEIGHT / 2), (60, 60))
+
+        self.current_level = 1
+
+        self.character.x = Level.get_level(self.current_level).start_x
+        self.character.y = Level.get_level(self.current_level).start_y
 
         self.clock = pygame.time.Clock()
         self.running = True
@@ -49,10 +56,13 @@ class Game:
                     self.character = self.character.transform(
                         CharacterType.PLUNGER)
 
-        self.character.handle_movement(pygame.key.get_pressed())
+        self.character.handle_movement(
+            pygame.key.get_pressed(), self.current_level)
 
     def draw(self):
         self.WIN.fill(Colors.BLACK)
+
+        Level.get_level(self.current_level).draw(self.WIN)
 
         self.character.draw(self.WIN)
 
@@ -62,8 +72,5 @@ class Game:
 
 
 if __name__ == '__main__':
-    WIDTH = 1120
-    HEIGHT = 630
-
-    game = Game(WIDTH, HEIGHT)
+    game = Game(Screen.WIDTH, Screen.HEIGHT)
     game.run()
