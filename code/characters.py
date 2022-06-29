@@ -1,6 +1,7 @@
 import pygame
 from level import Level
 from constants import *
+from animations import Animation
 import os
 
 
@@ -239,9 +240,27 @@ class Airplane(BaseCharacter):
 
         self.type = CharacterType.AIRPLANE
 
-        self.image = Fonts.CHARACTER.render("AIRPLANE", True, Colors.WHITE)
-        self.image = pygame.transform.scale(
-            self.image, (self.width, self.height))
+    def transform(self, type: CharacterType):
+        new = super().transform(type)
+
+        new.queued_animations.insert(0, Animation())
+        new.queued_animations.insert(1, Animation())
+
+        return new
+
+    def handle_movement(self, keys, level):
+        pass
+
+    def handle_collisions(self, level):
+        pass
+
+    def _get_image(self):
+        super()._get_image()
+
+        return self.image
+
+    def draw(self, win):
+        win.blit(self.image, (self.x, self.y))
 
 
 class Spring(BaseCharacter):
