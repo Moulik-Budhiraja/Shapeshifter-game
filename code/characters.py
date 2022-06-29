@@ -25,11 +25,13 @@ class BaseCharacter:
 
         self.frame = 0
 
+        self.queued_animations = []
+
     @property
     def rect(self):
         return pygame.Rect(self.x, self.y, self.width, self.height)
 
-    def handle_movement(self, keys):
+    def handle_movement(self, keys, level):
         pass
 
     def transform(self, type: CharacterType):
@@ -59,9 +61,18 @@ class BaseCharacter:
 
         new.frame = self.frame
 
+        new.queued_animations = self.queued_animations
+
         return new
 
     def _get_image(self):
+        if len(self.queued_animations) > 0:
+            self.image = self.queued_animations[0]
+            self.queued_animations[0].frames -= 1
+
+            if self.queued_animations[0].frames == 0:
+                self.queued_animations.pop(0)
+
         return self.image
 
     def kill(self, level):
@@ -210,6 +221,8 @@ class Blob(BaseCharacter):
             else:
                 self.image = self.idle_image
                 self.frame = 0
+
+        super()._get_image()
 
         return self.image
 
