@@ -2,6 +2,7 @@ import pygame
 from level import Level
 from constants import *
 from animations import Animation
+import math
 import os
 
 
@@ -27,6 +28,9 @@ class BaseCharacter:
         self.frame = 0
 
         self.queued_animations = []
+
+        self.transform_animations_right = []
+        self.transform_animations_left = []
 
     @property
     def rect(self):
@@ -64,11 +68,22 @@ class BaseCharacter:
 
         new.queued_animations = self.queued_animations
 
+        if self.x_vel >= 0:
+            new.queued_animations += reversed([a.copy()
+                                              for a in self.transform_animations_right])
+            new.queued_animations += [a.copy()
+                                      for a in new.transform_animations_right]
+        else:
+            new.queued_animations += reversed([a.copy()
+                                              for a in self.transform_animations_left])
+            new.queued_animations += [a.copy()
+                                      for a in new.transform_animations_left]
+
         return new
 
     def _get_image(self):
         if len(self.queued_animations) > 0:
-            self.image = self.queued_animations[0]
+            self.image = self.queued_animations[0].image
             self.queued_animations[0].frames -= 1
 
             if self.queued_animations[0].frames == 0:
@@ -103,6 +118,8 @@ class Blob(BaseCharacter):
         self.jumping = False
         self.jump_vel = 12
 
+        self.mass = 1
+
         # Load images
         try:
             self.idle_image = pygame.image.load(os.path.join(
@@ -131,10 +148,10 @@ class Blob(BaseCharacter):
 
     def handle_movement(self, keys, level):
         if keys[pygame.K_LEFT] == keys[pygame.K_RIGHT]:
-            self.x_accel = -self.x_vel * 0.05
+            self.x_accel = -self.x_vel * 0.05 * self.mass
 
             if not self.jumping:
-                self.x_accel = -self.x_vel * 0.2
+                self.x_accel = -self.x_vel * 0.2 * self.mass
 
         elif keys[pygame.K_LEFT]:
             self.x_accel = -2.5
@@ -148,15 +165,16 @@ class Blob(BaseCharacter):
 
         self.y_vel += self.y_accel
 
+        # Only adds to x velocity if it's not already at max speed
         if abs(self.x_vel) < 5 or self.x_vel == 0 or self.x_accel == 0 or self.x_vel / abs(self.x_vel) != self.x_accel / abs(self.x_accel):
             self.x_vel += self.x_accel
         else:
-            self.x_vel += -self.x_vel * 0.05
+            self.x_vel += -self.x_vel * 0.05 * self.mass
 
         if abs(self.x_vel) < 0.02:
             self.x_vel = 0
 
-        self.y_accel = 0.6
+        self.y_accel = 0.6 * self.mass
 
         self.y_vel = round(self.y_vel, 2)
         self.x_vel = round(self.x_vel, 2)
@@ -240,13 +258,50 @@ class Airplane(BaseCharacter):
 
         self.type = CharacterType.AIRPLANE
 
-    def transform(self, type: CharacterType):
-        new = super().transform(type)
+        self.mass = 0.25
+        self.drag = 0.005
 
-        new.queued_animations.insert(0, Animation())
-        new.queued_animations.insert(1, Animation())
+        try:
+            self.image_up_right = pygame.image.load(os.path.join(
+                "assets", "images", "characters", "plane", "SG Plane Up.png"))
+            self.image_down_right = pygame.image.load(os.path.join(
+                "assets", "images", "characters", "plane", "SG Plane Down.png"))
 
-        return new
+            self.transform_images_right = [pygame.image.load(os.path.join(
+                "assets", "images", "characters", "plane", f"SG Plane Transform {i}.png")) for i in range(1, 3)]
+        except FileNotFoundError:
+            self.image_up_right = pygame.image.load(os.path.join(
+                "..", "assets", "images", "characters", "plane", "SG Plane Up.png"))
+            self.image_down_right = pygame.image.load(os.path.join(
+                "..", "assets", "images", "characters", "plane", "SG Plane Down.png"))
+
+            self.transform_images_right = [pygame.image.load(os.path.join(
+                "..", "assets", "images", "characters", "plane", f"SG Plane Transform {i}.png")) for i in range(1, 3)]
+
+        self.image_up_left = pygame.transform.flip(
+            self.image_up_right, True, False)
+        self.image_down_left = pygame.transform.flip(
+            self.image_down_right, True, False)
+        self.transform_images_left = [pygame.transform.flip(
+            image, True, False) for image in self.transform_images_right]
+
+        self.transform_animations_right = [
+            Animation(image, 5) for image in self.transform_images_right]
+        self.transform_animations_left = [
+            Animation(image, 5) for image in self.transform_images_left]
+
+    @property
+    def angle(self):
+        return math.degrees(math.atan2(self.y_vel, self.x_vel))
+
+    @angle.setter
+    def angle(self, angle):
+        self.x_vel = math.cos(math.radians(angle)) * self.velocity
+        self.y_vel = math.sin(math.radians(angle)) * self.velocity
+
+    @property
+    def velocity(self):
+        return math.hypot(self.x_vel, self.y_vel)
 
     def handle_movement(self, keys, level):
         pass
@@ -255,12 +310,11 @@ class Airplane(BaseCharacter):
         pass
 
     def _get_image(self):
+        self.image = self.image_down_right
+
         super()._get_image()
 
         return self.image
-
-    def draw(self, win):
-        win.blit(self.image, (self.x, self.y))
 
 
 class Spring(BaseCharacter):
