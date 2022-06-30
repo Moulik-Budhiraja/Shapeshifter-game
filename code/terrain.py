@@ -138,15 +138,20 @@ class Trampoline(Terrain):
 
 
 class Goal(Terrain):
-    def __init__(self, x, y, width, height):
+    def __init__(self, x, y, width, height, target=None):
         super().__init__(x, y, width, height)
+
+        self.target = target
 
     def handle_collision(self, character: BaseCharacter):
         direction = self.check_collision(character)
         if not direction:
             return
 
-        Level.current_level += 1
+        if not self.target:
+            Level.current_level += 1
+        else:
+            Level.current_level = self.target
 
         character.kill(Level.current_level)
 
