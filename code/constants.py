@@ -86,6 +86,14 @@ class Screen:
     HEIGHT = 630
 
 
+class Motion:
+    GRAVITY = 0.6
+
+
+class Events:
+    CHARACTER_DIE = pygame.USEREVENT + 1
+
+
 class CharacterType(Enum):
     BLOB = auto()
     AIRPLANE = auto()

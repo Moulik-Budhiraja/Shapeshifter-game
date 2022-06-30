@@ -74,6 +74,24 @@ class Floor(Terrain):
                 character.y_vel = 0
                 character.y = self.rect.y + self.rect.height
 
+        elif character.type == CharacterType.AIRPLANE:
+            if direction == Direction.UP:
+                character.y_vel = 0
+                character.friction = 0.05
+                character.y = self.rect.y - character.rect.height + 1
+
+            elif direction == Direction.LEFT:
+                character.x_vel = 0
+                character.x = self.rect.x - character.rect.width + 1
+
+            elif direction == Direction.RIGHT:
+                character.x_vel = 0
+                character.x = self.rect.x + self.rect.width - 1
+
+            if direction == Direction.DOWN:
+                character.y_vel = 0
+                character.y = self.rect.y + self.rect.height
+
 
 class Lava(Terrain):
     def __init__(self, x, y, width, height):
@@ -84,7 +102,7 @@ class Lava(Terrain):
         if not direction:
             return
 
-        character.kill(self.level.number)
+        character.kill(Level.current_level)
 
     def draw(self, win):
         pygame.draw.rect(win, Colors.RED, self.rect)
@@ -117,3 +135,20 @@ class Trampoline(Terrain):
 
     def draw(self, win):
         pygame.draw.rect(win, Colors.BLUE, self.rect)
+
+
+class Goal(Terrain):
+    def __init__(self, x, y, width, height):
+        super().__init__(x, y, width, height)
+
+    def handle_collision(self, character: BaseCharacter):
+        direction = self.check_collision(character)
+        if not direction:
+            return
+
+        Level.current_level += 1
+
+        character.kill(Level.current_level)
+
+    def draw(self, win):
+        pygame.draw.rect(win, Colors.GREEN, self.rect)

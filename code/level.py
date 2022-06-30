@@ -3,6 +3,7 @@ from constants import *
 
 class Level:
     levels = {}
+    current_level = 1
 
     def __init__(self, name, number, start_pos: tuple = (Screen.WIDTH / 2, Screen.HEIGHT / 2)):
         self.name = name

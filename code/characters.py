@@ -23,7 +23,7 @@ class BaseCharacter:
         self.y_vel = 0
 
         self.x_accel = 0
-        self.y_accel = 0.6
+        self.y_accel = Motion.GRAVITY
 
         self.frame = 0
 
@@ -39,10 +39,18 @@ class BaseCharacter:
     def handle_movement(self, keys, level):
         pass
 
+    def handle_collisions(self, level):
+        for terrain in Level.get_level(level).terrain:
+            terrain.handle_collision(self)
+
     def transform(self, type: CharacterType):
+        if self.type == type:
+            return self
+
         if type == CharacterType.BLOB:
             new = Blob((self.x, self.y), (self.width,
                        self.height), self.max_health)
+            new.jumping = True
         elif type == CharacterType.AIRPLANE:
             new = Airplane((self.x, self.y), (self.width,
                            self.height), self.max_health)
@@ -100,8 +108,10 @@ class BaseCharacter:
         self.x_vel = 0
         self.y_vel = 0
 
-        self.y_accel = 0.6
+        self.y_accel = Motion.GRAVITY
         self.x_accel = 0
+
+        pygame.event.post(pygame.event.Event(Events.CHARACTER_DIE))
 
     def draw(self, win):
         win.blit(self._get_image(), (self.x, self.y))
@@ -174,7 +184,7 @@ class Blob(BaseCharacter):
         if abs(self.x_vel) < 0.02:
             self.x_vel = 0
 
-        self.y_accel = 0.6 * self.mass
+        self.y_accel = Motion.GRAVITY * self.mass
 
         self.y_vel = round(self.y_vel, 2)
         self.x_vel = round(self.x_vel, 2)
@@ -185,10 +195,6 @@ class Blob(BaseCharacter):
         self.jumping = True
 
         self.handle_collisions(level)
-
-    def handle_collisions(self, level):
-        for terrain in Level.get_level(level).terrain:
-            terrain.handle_collision(self)
 
     def _get_image(self):
         if self.jumping:
@@ -258,8 +264,11 @@ class Airplane(BaseCharacter):
 
         self.type = CharacterType.AIRPLANE
 
-        self.mass = 0.25
+        self.mass = 0.15
         self.drag = 0.005
+        self.friction = 0
+
+        self.turn_speed = 3
 
         try:
             self.image_up_right = pygame.image.load(os.path.join(
@@ -286,9 +295,13 @@ class Airplane(BaseCharacter):
             image, True, False) for image in self.transform_images_right]
 
         self.transform_animations_right = [
-            Animation(image, 5) for image in self.transform_images_right]
+            Animation(image, 8) for image in self.transform_images_right]
         self.transform_animations_left = [
-            Animation(image, 5) for image in self.transform_images_left]
+            Animation(image, 8) for image in self.transform_images_left]
+
+    @property
+    def rect(self):
+        return pygame.Rect(self.x, self.y, self.width, self.height)
 
     @property
     def angle(self):
@@ -304,17 +317,83 @@ class Airplane(BaseCharacter):
         return math.hypot(self.x_vel, self.y_vel)
 
     def handle_movement(self, keys, level):
-        pass
+        if keys[pygame.K_UP]:
+            if self.x_vel > 0:
+                if self.angle - self.turn_speed > -90:
+                    self.angle -= self.turn_speed
+            else:
+                if self.angle + self.turn_speed < -90 or self.angle > 90:
+                    self.angle += self.turn_speed
 
-    def handle_collisions(self, level):
-        pass
+        if keys[pygame.K_DOWN]:
+            # print(self.angle, self.x_vel)
+            if self.x_vel > 0:
+                if self.angle + self.turn_speed < 90:
+                    self.angle += self.turn_speed
+            else:
+                if self.angle - self.turn_speed > 90:
+                    self.angle -= self.turn_speed
+
+        # Gravity
+        self.y_vel += Motion.GRAVITY * self.mass
+
+        # Drag
+        x_drag = -self.x_vel * self.drag
+        y_drag = -self.y_vel * self.drag
+
+        # Friction
+        x_friction = -self.x_vel * self.friction
+        y_friction = -self.y_vel * self.friction
+
+        if not self.x_vel < x_drag + x_friction:
+            self.x_vel += x_drag
+            self.x_vel += x_friction
+
+        self.y_vel += y_drag
+        self.y_vel += y_friction
+
+        # Movement
+        self.x += round(self.x_vel, 0)
+        self.y += round(self.y_vel, 0)
+
+        self.friction = 0
+
+        self.handle_collisions(level)
 
     def _get_image(self):
-        self.image = self.image_down_right
+        # Pointing Down
+        if self.angle >= 0:
+            if self.x_vel >= 0:
+                self.image = self.image_up_right
+            elif self.x_vel < 0:
+                self.image = self.image_up_left
+        else:
+            if self.x_vel >= 0:
+                self.image = self.image_up_right
+            elif self.x_vel < 0:
+                self.image = self.image_up_left
 
         super()._get_image()
 
+        if self.angle >= 0:
+            if self.x_vel >= 0:
+                self.image = pygame.transform.rotate(self.image, -self.angle)
+            elif self.x_vel < 0:
+                self.image = pygame.transform.rotate(
+                    self.image, -self.angle + 180)
+        else:
+            if self.x_vel >= 0:
+                self.image = pygame.transform.rotate(self.image, -self.angle)
+            elif self.x_vel < 0:
+                self.image = pygame.transform.rotate(
+                    self.image, -self.angle + 180)
+
         return self.image
+
+    def draw(self, win):
+        win.blit(self._get_image(), (self.x, self.y + self.height // 2))
+
+        self.frame += 1
 
 
 class Spring(BaseCharacter):

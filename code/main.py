@@ -20,10 +20,10 @@ class Game:
     def setup(self):
         self.character = Blob((Screen.WIDTH / 2, Screen.HEIGHT / 2), (60, 60))
 
-        self.current_level = 1
+        Level.current_level = 1
 
-        self.character.x = Level.get_level(self.current_level).start_x
-        self.character.y = Level.get_level(self.current_level).start_y
+        self.character.x = Level.get_level(Level.current_level).start_x
+        self.character.y = Level.get_level(Level.current_level).start_y
 
         self.clock = pygame.time.Clock()
         self.running = True
@@ -56,13 +56,19 @@ class Game:
                     self.character = self.character.transform(
                         CharacterType.PLUNGER)
 
+                if event.key == pygame.K_r:
+                    self.character.kill(Level.current_level)
+
+            if event.type == Events.CHARACTER_DIE:
+                self.character = self.character.transform(CharacterType.BLOB)
+
         self.character.handle_movement(
-            pygame.key.get_pressed(), self.current_level)
+            pygame.key.get_pressed(), Level.current_level)
 
     def draw(self):
         self.WIN.fill(Colors.BLACK)
 
-        Level.get_level(self.current_level).draw(self.WIN)
+        Level.get_level(Level.current_level).draw(self.WIN)
 
         self.character.draw(self.WIN)
 
