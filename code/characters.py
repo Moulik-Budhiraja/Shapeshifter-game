@@ -345,9 +345,8 @@ class Airplane(BaseCharacter):
         x_friction = -self.x_vel * self.friction
         y_friction = -self.y_vel * self.friction
 
-        if not self.x_vel < x_drag + x_friction:
-            self.x_vel += x_drag
-            self.x_vel += x_friction
+        self.x_vel += x_drag
+        self.x_vel += x_friction
 
         self.y_vel += y_drag
         self.y_vel += y_friction

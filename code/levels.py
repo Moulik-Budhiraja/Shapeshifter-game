@@ -70,4 +70,4 @@ level_3.add_terrain(Goal(Screen.WIDTH - 100, Screen.HEIGHT - 150, 50, 50))
 level_4 = Level("level4", 4, (100, Screen.HEIGHT - 500))
 
 # Goal
-level_4.add_terrain(Goal(0, Screen.HEIGHT - 100, Screen.WIDTH, 100, 1))
+level_4.add_terrain(Goal(0, Screen.HEIGHT - 100, Screen.WIDTH, 100, target=1))
