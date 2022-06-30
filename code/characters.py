@@ -295,9 +295,9 @@ class Airplane(BaseCharacter):
             image, True, False) for image in self.transform_images_right]
 
         self.transform_animations_right = [
-            Animation(image, 8) for image in self.transform_images_right]
+            Animation(image, 3) for image in self.transform_images_right]
         self.transform_animations_left = [
-            Animation(image, 8) for image in self.transform_images_left]
+            Animation(image, 3) for image in self.transform_images_left]
 
     @property
     def rect(self):
@@ -412,9 +412,58 @@ class Weight(BaseCharacter):
 
         self.type = CharacterType.WEIGHT
 
-        self.image = Fonts.CHARACTER.render("WEIGHT", True, Colors.WHITE)
-        self.image = pygame.transform.scale(
-            self.image, (self.width, self.height))
+        self.mass = 3
+
+        self.friction = 0.001
+
+        try:
+            self.image_ball = pygame.image.load(os.path.join(
+                "assets", "images", "characters", "metal ball", "SG Ball.png"))
+
+            self.transform_images = [pygame.image.load(os.path.join(
+                "assets", "images", "characters", "metal ball", f"SG Ball Transform {i}.png")) for i in range(1, 3)]
+
+        except FileNotFoundError:
+            self.image_ball = pygame.image.load(os.path.join(
+                "..", "assets", "images", "characters", "metal ball", "SG Ball.png"))
+
+            self.transform_images = [pygame.image.load(os.path.join(
+                "..", "assets", "images", "characters", "metal ball", f"SG Ball Transform {i}.png")) for i in range(1, 3)]
+
+        self.transform_animations_right = [
+            Animation(image, 3) for image in self.transform_images]
+        self.transform_animations_left = [
+            Animation(image, 3) for image in self.transform_images]
+
+    def handle_movement(self, keys, level):
+        # Gravity
+        self.y_vel += Motion.GRAVITY * self.mass
+
+        # Friction
+        x_friction = -self.x_vel * self.friction
+        y_friction = -self.y_vel * self.friction
+
+        self.x_vel += x_friction
+        self.y_vel += y_friction
+
+        # Movement
+        self.x += round(self.x_vel, 0)
+        self.y += round(self.y_vel, 0)
+
+        self.handle_collisions(level)
+
+    def _get_image(self):
+        self.image = self.image_ball
+
+        super()._get_image()
+
+        return self.image
+
+    def draw(self, win):
+        win.blit(self._get_image(), (self.x, self.y +
+                 self.height - self.height // 2.65))
+
+        self.frame += 1
 
 
 class Plunger(BaseCharacter):

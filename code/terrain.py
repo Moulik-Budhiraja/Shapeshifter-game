@@ -92,6 +92,23 @@ class Floor(Terrain):
                 character.y_vel = 0
                 character.y = self.rect.y + self.rect.height
 
+        elif character.type == CharacterType.WEIGHT:
+            if direction == Direction.UP:
+                character.y_vel = 0
+                character.y = self.rect.y - character.rect.height + 1
+
+            elif direction == Direction.LEFT:
+                character.x_vel = 0
+                character.x = self.rect.x - character.rect.width + 1
+
+            elif direction == Direction.RIGHT:
+                character.x_vel = 0
+                character.x = self.rect.x + self.rect.width - 1
+
+            if direction == Direction.DOWN:
+                character.y_vel = 0
+                character.y = self.rect.y + self.rect.height
+
 
 class Lava(Terrain):
     def __init__(self, x, y, width, height):
