@@ -265,7 +265,7 @@ class Airplane(BaseCharacter):
         self.type = CharacterType.AIRPLANE
 
         self.mass = 0.15
-        self.drag = 0.005
+        self.drag = 0.01
         self.friction = 0
 
         self.turn_speed = 3
