@@ -5,6 +5,8 @@ from animations import Animation
 import math
 import os
 
+show_hitboxes = True
+
 
 class BaseCharacter:
     def __init__(self, pos: tuple, size: tuple, max_health=100):
@@ -12,6 +14,9 @@ class BaseCharacter:
         self.width, self.height = size
         self.max_health = max_health
         self.health = max_health
+
+        self.x_offset = 0
+        self.y_offset = 0
 
         self.type = None
 
@@ -34,35 +39,33 @@ class BaseCharacter:
 
     @property
     def rect(self):
-        return pygame.Rect(self.x, self.y, self.width, self.height)
+        return pygame.Rect(self.x, self.y, self.width - self.x_offset, self.height - self.y_offset)
 
     def handle_movement(self, keys, level):
         pass
-
-    def handle_collisions(self, level):
-        for terrain in Level.get_level(level).terrain:
-            terrain.handle_collision(self)
 
     def transform(self, type: CharacterType):
         if self.type == type:
             return self
 
         if type == CharacterType.BLOB:
-            new = Blob((self.x, self.y), (self.width,
+            new = Blob((self.x, self.y - self.y_offset), (self.width,
                        self.height), self.max_health)
             new.jumping = True
         elif type == CharacterType.AIRPLANE:
-            new = Airplane((self.x, self.y), (self.width,
-                           self.height), self.max_health)
+            new = Airplane((self.x, self.y - self.y_offset), (self.width,
+                                                              self.height), self.max_health)
         elif type == CharacterType.SPRING:
-            new = Spring((self.x, self.y), (self.width,
-                         self.height), self.max_health)
+            new = Spring((self.x, self.y - self.y_offset), (self.width,
+                                                            self.height), self.max_health)
         elif type == CharacterType.WEIGHT:
-            new = Weight((self.x, self.y), (self.width,
-                         self.height), self.max_health)
+            new = Weight((self.x, self.y - self.y_offset), (self.width,
+                                                            self.height), self.max_health)
         elif type == CharacterType.PLUNGER:
-            new = Plunger((self.x, self.y), (self.width,
-                          self.height), self.max_health)
+            new = Plunger((self.x, self.y - self.y_offset), (self.width,
+                                                             self.height), self.max_health)
+
+        new.y += new.y_offset
 
         new.health = self.health
 
@@ -168,34 +171,6 @@ class Blob(BaseCharacter):
         elif keys[pygame.K_RIGHT]:
             self.x_accel = 2.5
 
-        if keys[pygame.K_UP]:
-            if not self.jumping:
-                self.jumping = True
-                self.y_vel = -self.jump_vel
-
-        self.y_vel += self.y_accel
-
-        # Only adds to x velocity if it's not already at max speed
-        if abs(self.x_vel) < 5 or self.x_vel == 0 or self.x_accel == 0 or self.x_vel / abs(self.x_vel) != self.x_accel / abs(self.x_accel):
-            self.x_vel += self.x_accel
-        else:
-            self.x_vel += -self.x_vel * 0.05 * self.mass
-
-        if abs(self.x_vel) < 0.02:
-            self.x_vel = 0
-
-        self.y_accel = Motion.GRAVITY * self.mass
-
-        self.y_vel = round(self.y_vel, 2)
-        self.x_vel = round(self.x_vel, 2)
-
-        self.x += round(self.x_vel, 0)
-        self.y += round(self.y_vel, 0)
-
-        self.jumping = True
-
-        self.handle_collisions(level)
-
     def _get_image(self):
         if self.jumping:
             if self.x_vel >= 0:
@@ -255,6 +230,9 @@ class Blob(BaseCharacter):
         win.blit(self._get_image(), (self.x, self.y -
                  (self._get_image().get_height() - self.idle_image.get_height())))
 
+        if show_hitboxes:
+            pygame.draw.rect(win, Colors.RED, self.rect, 1)
+
         self.frame += 1
 
 
@@ -269,6 +247,8 @@ class Airplane(BaseCharacter):
         self.friction = 0
 
         self.turn_speed = 3
+
+        self.y_offset = 30
 
         try:
             self.image_up_right = pygame.image.load(os.path.join(
@@ -298,10 +278,6 @@ class Airplane(BaseCharacter):
             Animation(image, 3) for image in self.transform_images_right]
         self.transform_animations_left = [
             Animation(image, 3) for image in self.transform_images_left]
-
-    @property
-    def rect(self):
-        return pygame.Rect(self.x, self.y, self.width, self.height)
 
     @property
     def angle(self):
@@ -334,30 +310,7 @@ class Airplane(BaseCharacter):
                 if self.angle - self.turn_speed > 90:
                     self.angle -= self.turn_speed
 
-        # Gravity
-        self.y_vel += Motion.GRAVITY * self.mass
-
-        # Drag
-        x_drag = -self.x_vel * self.drag
-        y_drag = -self.y_vel * self.drag
-
-        # Friction
-        x_friction = -self.x_vel * self.friction
-        y_friction = -self.y_vel * self.friction
-
-        self.x_vel += x_drag
-        self.x_vel += x_friction
-
-        self.y_vel += y_drag
-        self.y_vel += y_friction
-
-        # Movement
-        self.x += round(self.x_vel, 0)
-        self.y += round(self.y_vel, 0)
-
-        self.friction = 0
-
-        self.handle_collisions(level)
+        pass
 
     def _get_image(self):
         # Pointing Down
@@ -390,7 +343,10 @@ class Airplane(BaseCharacter):
         return self.image
 
     def draw(self, win):
-        win.blit(self._get_image(), (self.x, self.y + self.height // 2))
+        win.blit(self._get_image(), (self.x, self.y))
+
+        if show_hitboxes:
+            pygame.draw.rect(win, Colors.RED, self.rect, 1)
 
         self.frame += 1
 
@@ -411,6 +367,9 @@ class Weight(BaseCharacter):
         super().__init__(pos, size, max_health)
 
         self.type = CharacterType.WEIGHT
+
+        self.x_offset = 38
+        self.y_offset = 38
 
         self.mass = 3
 
@@ -436,32 +395,13 @@ class Weight(BaseCharacter):
             Animation(image, 3) for image in self.transform_images]
 
     def handle_movement(self, keys, level):
-        # Gravity
-        self.y_vel += Motion.GRAVITY * self.mass
-
-        # Friction
-        x_friction = -self.x_vel * self.friction
-        y_friction = -self.y_vel * self.friction
-
-        self.x_vel += x_friction
-        self.y_vel += y_friction
-
-        # Movement
-        self.x += round(self.x_vel, 0)
-        self.y += round(self.y_vel, 0)
-
-        self.handle_collisions(level)
-
-    def _get_image(self):
-        self.image = self.image_ball
-
-        super()._get_image()
-
-        return self.image
+        pass
 
     def draw(self, win):
-        win.blit(self._get_image(), (self.x, self.y +
-                 self.height - self.height // 2.65))
+        win.blit(self._get_image(), (self.x, self.y))
+
+        if show_hitboxes:
+            pygame.draw.rect(win, Colors.RED, self.rect, 1)
 
         self.frame += 1
 

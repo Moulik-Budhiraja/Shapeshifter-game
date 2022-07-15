@@ -1,4 +1,5 @@
 import pygame
+import pymunk
 from constants import *
 from characters import Blob, Airplane, Spring, Weight, Plunger
 from level import Level
@@ -18,6 +19,13 @@ class Game:
         self.loop()
 
     def setup(self):
+        self.FPS = 60
+        self.DT = 1 / self.FPS
+        self.SUB_STEPS = 10
+        self.clock = pygame.time.Clock()
+
+        self.space = pymunk.Space()
+
         self.character = Blob((Screen.WIDTH / 2, Screen.HEIGHT / 2), (60, 60))
 
         Level.current_level = 1
@@ -25,7 +33,6 @@ class Game:
         self.character.x = Level.get_level(Level.current_level).start_x
         self.character.y = Level.get_level(Level.current_level).start_y
 
-        self.clock = pygame.time.Clock()
         self.running = True
 
     def loop(self):
@@ -65,6 +72,9 @@ class Game:
         self.character.handle_movement(
             pygame.key.get_pressed(), Level.current_level)
 
+        for _ in range(self.SUB_STEPS):
+            self.space.step(self.DT / self.SUB_STEPS)
+
     def draw(self):
         self.WIN.fill(Colors.BLACK)
 
@@ -74,7 +84,7 @@ class Game:
 
         pygame.display.update()
 
-        self.clock.tick(60)
+        self.clock.tick(self.FPS)
 
 
 if __name__ == '__main__':

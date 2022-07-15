@@ -12,6 +12,9 @@ class Terrain:
 
         self.level = None
 
+    def __repr__(self) -> str:
+        return f'Terrain({self.x}, {self.y}, {self.width}, {self.height})'
+
     @property
     def rect(self):
         return pygame.Rect(self.x, self.y, self.width, self.height)
@@ -29,7 +32,7 @@ class Terrain:
                 return Direction.RIGHT
 
         # Top or bottom
-        elif character.x + character.width - character.width * 0.25 > self.x and character.x + character.width * 0.25 < self.x + self.width:
+        elif character.x + character.rect.width - character.rect.width * 0.25 > self.x and character.x + character.rect.width * 0.25 < self.x + self.width:
             if character.rect.centery < self.rect.centery:
                 return Direction.UP
 
