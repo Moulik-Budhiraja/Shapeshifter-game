@@ -1,4 +1,5 @@
 import pygame
+import pymunk
 from constants import *
 from characters import *
 
@@ -12,168 +13,53 @@ class Terrain:
 
         self.level = None
 
+        self.space = None
+
     def __repr__(self) -> str:
-        return f'Terrain({self.x}, {self.y}, {self.width}, {self.height})'
+        return f"Terrain({self.x}, {self.y}, {self.width}, {self.height})"
 
     @property
     def rect(self):
         return pygame.Rect(self.x, self.y, self.width, self.height)
 
-    def check_collision(self, character: BaseCharacter):
-        if not self.rect.colliderect(character.rect):
-            return False
+    def setup_physics(self, space):
+        self.body = pymunk.Body(body_type=pymunk.Body.STATIC)
+        self.body.position = (self.x, self.y)
 
-        # Left or right
-        if character.rect.centery > self.y and character.rect.centery < self.y + self.height:
-            if character.rect.centerx < self.rect.centerx:
-                return Direction.LEFT
+        self.shape = pymunk.Poly.create_box(self.body, (self.width, self.height))
+        self.shape.friction = 0.5
+        self.shape.elasticity = 0.5
 
-            elif character.rect.centerx >= self.rect.centerx:
-                return Direction.RIGHT
-
-        # Top or bottom
-        elif character.x + character.rect.width - character.rect.width * 0.25 > self.x and character.x + character.rect.width * 0.25 < self.x + self.width:
-            if character.rect.centery < self.rect.centery:
-                return Direction.UP
-
-            elif character.rect.centery >= self.rect.centery:
-                return Direction.DOWN
-
-    def handle_collision(self, character: BaseCharacter):
-        pass
+        space.add(self.body, self.shape)
 
     def draw(self, win):
         pygame.draw.rect(win, Colors.DARK_GRAY3, self.rect)
 
 
 class Floor(Terrain):
-    def __init__(self, x, y, width, height):
-        super().__init__(x, y, width, height)
-
-    def handle_collision(self, character: BaseCharacter):
-        direction = self.check_collision(character)
-        if not direction:
-            return
-
-        if character.type == CharacterType.BLOB:
-            if direction == Direction.UP:
-                character.y_vel = 0
-                character.y_accel = 0
-                character.jumping = False
-                character.bounced = False
-                character.y = self.rect.y - character.rect.height + 1
-
-            elif direction == Direction.LEFT:
-                character.x_vel = 0
-                character.x_accel = 0
-                character.x = self.rect.x - character.rect.width + 1
-
-            elif direction == Direction.RIGHT:
-                character.x_vel = 0
-                character.x_accel = 0
-                character.x = self.rect.x + self.rect.width - 1
-
-            if direction == Direction.DOWN:
-                character.y_vel = 0
-                character.y = self.rect.y + self.rect.height
-
-        elif character.type == CharacterType.AIRPLANE:
-            if direction == Direction.UP:
-                character.y_vel = 0
-                character.friction = 0.05
-                character.y = self.rect.y - character.rect.height + 1
-
-            elif direction == Direction.LEFT:
-                character.x_vel = 0
-                character.x = self.rect.x - character.rect.width + 1
-
-            elif direction == Direction.RIGHT:
-                character.x_vel = 0
-                character.x = self.rect.x + self.rect.width - 1
-
-            if direction == Direction.DOWN:
-                character.y_vel = 0
-                character.y = self.rect.y + self.rect.height
-
-        elif character.type == CharacterType.WEIGHT:
-            if direction == Direction.UP:
-                character.y_vel = 0
-                character.y = self.rect.y - character.rect.height + 1
-
-            elif direction == Direction.LEFT:
-                character.x_vel = 0
-                character.x = self.rect.x - character.rect.width + 1
-
-            elif direction == Direction.RIGHT:
-                character.x_vel = 0
-                character.x = self.rect.x + self.rect.width - 1
-
-            if direction == Direction.DOWN:
-                character.y_vel = 0
-                character.y = self.rect.y + self.rect.height
+    def __init__(self, space, x, y, width, height):
+        super().__init__(space, x, y, width, height)
 
 
 class Lava(Terrain):
-    def __init__(self, x, y, width, height):
-        super().__init__(x, y, width, height)
-
-    def handle_collision(self, character: BaseCharacter):
-        direction = self.check_collision(character)
-        if not direction:
-            return
-
-        character.kill(Level.current_level)
-
-    def draw(self, win):
-        pygame.draw.rect(win, Colors.RED, self.rect)
+    def __init__(self, space, x, y, width, height):
+        super().__init__(space, x, y, width, height)
 
 
 class Trampoline(Terrain):
-    def __init__(self, x, y, width, height, power):
-        super().__init__(x, y, width, height)
+    def __init__(self, space, x, y, width, height, power):
+        super().__init__(space, x, y, width, height)
 
         self.power = power
 
-    def handle_collision(self, character: BaseCharacter):
-        direction = self.check_collision(character)
-        if not direction:
-            return
+    def setup_physics(self, space):
+        super().setup_physics(space)
 
-        character.bounced = True
-
-        if direction == Direction.UP:
-            character.y_vel = -self.power
-
-        if direction == Direction.DOWN:
-            character.y_vel = self.power
-
-        if direction == Direction.LEFT:
-            character.x_vel = -self.power
-
-        if direction == Direction.RIGHT:
-            character.x_vel = self.power
-
-    def draw(self, win):
-        pygame.draw.rect(win, Colors.BLUE, self.rect)
+        self.shape.elasticity *= self.power
 
 
 class Goal(Terrain):
-    def __init__(self, x, y, width, height, target=None):
-        super().__init__(x, y, width, height)
+    def __init__(self, space, x, y, width, height, target=None):
+        super().__init__(space, x, y, width, height)
 
         self.target = target
-
-    def handle_collision(self, character: BaseCharacter):
-        direction = self.check_collision(character)
-        if not direction:
-            return
-
-        if not self.target:
-            Level.current_level += 1
-        else:
-            Level.current_level = self.target
-
-        character.kill(Level.current_level)
-
-    def draw(self, win):
-        pygame.draw.rect(win, Colors.GREEN, self.rect)

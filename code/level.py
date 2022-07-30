@@ -5,7 +5,7 @@ class Level:
     levels = {}
     current_level = 1
 
-    def __init__(self, name, number, start_pos: tuple = (Screen.WIDTH / 2, Screen.HEIGHT / 2)):
+    def __init__(self, space, name, number, start_pos: tuple = (Screen.WIDTH / 2, Screen.HEIGHT / 2)):
         self.name = name
         self.number = number
 

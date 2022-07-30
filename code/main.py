@@ -1,5 +1,6 @@
 import pygame
 import pymunk
+import pymunk.pygame_util
 from constants import *
 from characters import Blob, Airplane, Spring, Weight, Plunger
 from level import Level
@@ -25,8 +26,12 @@ class Game:
         self.clock = pygame.time.Clock()
 
         self.space = pymunk.Space()
+        self.space.gravity = (0, 981)
 
-        self.character = Blob((Screen.WIDTH / 2, Screen.HEIGHT / 2), (60, 60))
+        self.draw_options = pymunk.pygame_util.DrawOptions(self.WIN)
+
+        self.character = Blob(self.space, (
+            Screen.WIDTH / 2, Screen.HEIGHT / 2), (60, 60))
 
         Level.current_level = 1
 
@@ -79,6 +84,8 @@ class Game:
         self.WIN.fill(Colors.BLACK)
 
         Level.get_level(Level.current_level).draw(self.WIN)
+
+        self.space.debug_draw(self.draw_options)
 
         self.character.draw(self.WIN)
 
