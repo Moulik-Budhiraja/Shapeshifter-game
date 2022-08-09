@@ -1,3 +1,5 @@
+from platform import platform
+from sys import float_repr_style
 from level import Level
 from terrain import *
 from constants import *
@@ -69,5 +71,14 @@ level_3.add_terrain(Goal(Screen.WIDTH - 100, Screen.HEIGHT - 150, 50, 50))
 
 level_4 = Level("level4", 4, (100, Screen.HEIGHT - 500))
 
-# Goal
-level_4.add_terrain(Goal(0, Screen.HEIGHT - 100, Screen.WIDTH, 100, target=1))
+level_4.add_terrain(Floor(0, Screen.HEIGHT - 25, Screen.WIDTH, 25))
+level_4.add_terrain(Floor(Screen.WIDTH - 25, 0, 25, Screen.HEIGHT))
+level_4.add_terrain(Floor(0, 0, Screen.WIDTH, 25))
+level_4.add_terrain(Floor(0, 0, 25, Screen.HEIGHT))
+
+level_4.add_terrain(Trampoline(160, Screen.HEIGHT - 30, 50, 25, 25))
+
+level_4.add_terrain(Lava(160, Screen.HEIGHT - 500, 50, 25))
+level_4.add_terrain(Floor(210, Screen.HEIGHT - 500, 125, 25))
+level_4.add_terrain(Floor(600, Screen.HEIGHT - 300, 50, 25))
+level_4.add_terrain(Floor(325, Screen.HEIGHT - 500, 25, 125))

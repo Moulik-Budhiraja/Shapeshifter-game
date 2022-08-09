@@ -20,7 +20,7 @@ class Game:
     def setup(self):
         self.character = Blob((Screen.WIDTH / 2, Screen.HEIGHT / 2), (60, 60))
 
-        Level.current_level = 1
+        Level.current_level = 4
 
         self.character.x = Level.get_level(Level.current_level).start_x
         self.character.y = Level.get_level(Level.current_level).start_y
