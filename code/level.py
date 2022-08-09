@@ -1,13 +1,18 @@
 from constants import *
+import pymunk
 
 
 class Level:
     levels = {}
     current_level = 1
 
-    def __init__(self, space, name, number, start_pos: tuple = (Screen.WIDTH / 2, Screen.HEIGHT / 2)):
+    def __init__(self, name, number, start_pos: tuple = (Screen.WIDTH / 2, Screen.HEIGHT / 2)):
         self.name = name
         self.number = number
+        Level.levels[number] = self
+
+        self.space = pymunk.Space()
+        self.space.gravity = (0, 981)
 
         self.start_x, self.start_y = start_pos
 
@@ -15,12 +20,17 @@ class Level:
 
         self.background = None
 
-        Level.levels[number] = self
-
     def add_terrain(self, terrain):
         self.terrain.append(terrain)
 
         terrain.level = self
+
+    def reset(self):
+        self.space = pymunk.Space()
+        self.space.gravity = (0, 981)
+
+        for terrain in self.terrain:
+            terrain.reset(self.space)
 
     def draw(self, win):
         win.fill(Colors.LIGHT_GRAY3)

@@ -3,8 +3,36 @@ import pymunk
 from level import Level
 from constants import *
 from animations import Animation
-import math
-import os
+from movement import MovementHandler
+
+
+class Character:
+    TYPES = {
+        CharacterType.BLOB: {
+            "movement": MovementHandler.standard,
+        },
+        CharacterType.AIRPLANE: {
+        },
+        CharacterType.SPRING: {
+        },
+        CharacterType.WEIGHT: {
+        },
+        CharacterType.PLUNGER: {
+        },
+    }
+
+    def __init__(self):
+        self.transform(CharacterType.BLOB)
+
+    def transform(self, character_type):
+        self.character_type = character_type
+
+    def set_level(self, level):
+        self.level = level
+
+        # Reset level and add self to level space
+
+    def move(self, keys)
 
 
 class BaseCharacter:

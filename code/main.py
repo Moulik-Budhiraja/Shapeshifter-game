@@ -25,8 +25,7 @@ class Game:
         self.SUB_STEPS = 10
         self.clock = pygame.time.Clock()
 
-        self.space = pymunk.Space()
-        self.space.gravity = (0, 981)
+
 
         self.draw_options = pymunk.pygame_util.DrawOptions(self.WIN)
 

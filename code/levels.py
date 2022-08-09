@@ -12,8 +12,6 @@ Need to determine the max jump distance.
 To change the current level, you can change a line of code in the setup() function in main.py.
 """
 
-space = None
-
 
 def generate_levels():
     level_1 = Level("level1", 1, (100, Screen.HEIGHT - 100))

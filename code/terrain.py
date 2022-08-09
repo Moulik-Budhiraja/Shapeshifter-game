@@ -11,9 +11,10 @@ class Terrain:
         self.width = width
         self.height = height
 
-        self.level = None
+        self.starting_x = x
+        self.starting_y = y
 
-        self.space = None
+        self.level: Level = None
 
     def __repr__(self) -> str:
         return f"Terrain({self.x}, {self.y}, {self.width}, {self.height})"
@@ -22,7 +23,7 @@ class Terrain:
     def rect(self):
         return pygame.Rect(self.x, self.y, self.width, self.height)
 
-    def setup_physics(self, space):
+    def setup_physics(self):
         self.body = pymunk.Body(body_type=pymunk.Body.STATIC)
         self.body.position = (self.x, self.y)
 
@@ -30,7 +31,13 @@ class Terrain:
         self.shape.friction = 0.5
         self.shape.elasticity = 0.5
 
-        space.add(self.body, self.shape)
+        self.level.space.add(self.body, self.shape)
+
+    def reset(self):
+        self.x = self.starting_x
+        self.y = self.starting_y
+
+        self.setup_physics(self.level.space)
 
     def draw(self, win):
         pygame.draw.rect(win, Colors.DARK_GRAY3, self.rect)
