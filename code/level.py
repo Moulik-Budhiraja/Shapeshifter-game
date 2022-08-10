@@ -1,4 +1,5 @@
 from constants import *
+import helpers
 import pymunk
 
 
@@ -25,6 +26,8 @@ class Level:
 
         terrain.level = self
 
+        terrain.setup_physics()
+
     def reset(self):
         self.space = pymunk.Space()
         self.space.gravity = (0, 981)
@@ -40,3 +43,7 @@ class Level:
     @classmethod
     def get_level(cls, number) -> 'Level':
         return cls.levels[number]
+
+    @classmethod
+    def get_current_level(cls) -> 'Level':
+        return cls.levels[cls.current_level]

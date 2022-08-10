@@ -2,6 +2,7 @@ import pygame
 import pymunk
 from constants import *
 from characters import *
+import helpers
 
 
 class Terrain:
@@ -25,7 +26,7 @@ class Terrain:
 
     def setup_physics(self):
         self.body = pymunk.Body(body_type=pymunk.Body.STATIC)
-        self.body.position = (self.x, self.y)
+        self.body.position = helpers.transform_to_pymunk(self.x, self.y, self.width, self.height)
 
         self.shape = pymunk.Poly.create_box(self.body, (self.width, self.height))
         self.shape.friction = 0.5
@@ -44,29 +45,29 @@ class Terrain:
 
 
 class Floor(Terrain):
-    def __init__(self, space, x, y, width, height):
-        super().__init__(space, x, y, width, height)
+    def __init__(self, x, y, width, height):
+        super().__init__(x, y, width, height)
 
 
 class Lava(Terrain):
-    def __init__(self, space, x, y, width, height):
-        super().__init__(space, x, y, width, height)
+    def __init__(self,  x, y, width, height):
+        super().__init__( x, y, width, height)
 
 
 class Trampoline(Terrain):
-    def __init__(self, space, x, y, width, height, power):
-        super().__init__(space, x, y, width, height)
+    def __init__(self,  x, y, width, height, power):
+        super().__init__( x, y, width, height)
 
         self.power = power
 
-    def setup_physics(self, space):
-        super().setup_physics(space)
+    def setup_physics(self):
+        super().setup_physics()
 
         self.shape.elasticity *= self.power
 
 
 class Goal(Terrain):
-    def __init__(self, space, x, y, width, height, target=None):
-        super().__init__(space, x, y, width, height)
+    def __init__(self,  x, y, width, height, target=None):
+        super().__init__( x, y, width, height)
 
         self.target = target

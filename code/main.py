@@ -29,10 +29,12 @@ class Game:
 
         self.draw_options = pymunk.pygame_util.DrawOptions(self.WIN)
 
-        self.character = Blob(self.space, (
-            Screen.WIDTH / 2, Screen.HEIGHT / 2), (60, 60))
-
         Level.current_level = 1
+
+        levels.generate_levels()
+
+        self.character = Blob(Level.get_level(1).space, (
+            Screen.WIDTH / 2, Screen.HEIGHT / 2), (60, 60))
 
         self.character.x = Level.get_level(Level.current_level).start_x
         self.character.y = Level.get_level(Level.current_level).start_y
@@ -74,17 +76,20 @@ class Game:
                 self.character = self.character.transform(CharacterType.BLOB)
 
         self.character.handle_movement(
-            pygame.key.get_pressed(), Level.current_level)
+            pygame.key.get_pressed())
 
         for _ in range(self.SUB_STEPS):
-            self.space.step(self.DT / self.SUB_STEPS)
+            Level.get_level(Level.current_level).space.step(self.DT / self.SUB_STEPS)
+            self.character.velocity_adjustments()
+
+        self.character.update_location()
 
     def draw(self):
         self.WIN.fill(Colors.BLACK)
 
         Level.get_level(Level.current_level).draw(self.WIN)
 
-        self.space.debug_draw(self.draw_options)
+        Level.get_level(Level.current_level).space.debug_draw(self.draw_options)
 
         self.character.draw(self.WIN)
 
