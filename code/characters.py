@@ -4,6 +4,7 @@ from level import Level
 from constants import *
 from animations import Animation
 import helpers
+import math
 
 
 class Character:
@@ -175,13 +176,32 @@ class Airplane(BaseCharacter):
         self.shape.mass = 0.25
         self.shape.friction = 0.7
         self.shape.elasticity = 0.2
+        self.body.velocity_func = lambda body, gravity, damping, dt: pymunk.Body.update_velocity(body, (gravity[0], gravity[1] * 0.7), damping, dt)
 
         self.space.add(self.body, self.shape)
 
-        self.MAX_X_VELOCITY = 300
-
     def handle_movement(self, keys):
-        self.body.velocity = (self.body.velocity.x, self.body.velocity.y * 0.85)
+        direction = self.body.velocity.x / abs(self.body.velocity.x)
+
+        velocity_magnitude = math.sqrt(self.body.velocity.x ** 2 + self.body.velocity.y ** 2)
+        angle = math.degrees(math.atan2(self.body.velocity.y, self.body.velocity.x))
+
+        print(angle, end="  |  ")
+
+        if keys[pygame.K_UP]:
+            angle -= 4 * direction
+        if keys[pygame.K_DOWN]:
+            angle += 4 * direction
+
+        print(angle, end="\n")
+
+        self.body.velocity = (velocity_magnitude * math.cos(math.radians(angle)), velocity_magnitude * math.sin(math.radians(angle)))
+        self.body.angle = math.radians(angle)
+
+
+            
+
+
 
 
 class Spring(BaseCharacter):
