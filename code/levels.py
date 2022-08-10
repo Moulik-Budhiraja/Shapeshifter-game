@@ -76,10 +76,11 @@ level_4.add_terrain(Floor(Screen.WIDTH - 25, 0, 25, Screen.HEIGHT))
 level_4.add_terrain(Floor(0, 0, Screen.WIDTH, 25))
 level_4.add_terrain(Floor(0, 0, 25, Screen.HEIGHT))
 
-level_4.add_terrain(Floor(100, Screen.HEIGHT - 400, 175, 25))
+#Trampoline
+level_4.add_terrain(Trampoline(285, Screen.HEIGHT - 50, 75, 25, 22))
 
 #Die
-level_4.add_terrain(Lava(25,Screen.HEIGHT - 25, Screen.WIDTH - 50, 20))
+level_4.add_terrain(Lava(460, Screen.HEIGHT - 25, Screen.WIDTH - 50, 20))
 
 #First Entrance
 level_4.add_terrain(Floor(435, 25, 25, 50))
@@ -95,3 +96,11 @@ level_4.add_terrain(Floor(965, 400, 25, Screen.HEIGHT))
 
 #GOALLLLLLL
 level_4.add_terrain(Goal(1010, Screen.HEIGHT - 70, 50, 20, 1))
+
+level_5 = Level("level5", 5, (100, Screen.HEIGHT - 600))
+
+level_5.add_terrain(Floor(0, Screen.HEIGHT - 25, Screen.WIDTH, 25)) 
+level_5.add_terrain(Floor(Screen.WIDTH - 25, 0, 25, Screen.HEIGHT))
+level_5.add_terrain(Floor(0, 0, Screen.WIDTH, 25))
+level_5.add_terrain(Floor(0, 0, 25, Screen.HEIGHT))
+
