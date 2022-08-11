@@ -3,6 +3,7 @@ import pymunk
 from constants import *
 from characters import *
 import helpers
+import math
 
 
 class Terrain:
@@ -24,7 +25,12 @@ class Terrain:
     def rect(self):
         return pygame.Rect(self.x, self.y, self.width, self.height)
 
-    def setup_physics(self):
+    def setup_physics(self, collision_type: int):
+        try:
+            self.level.space.remove(self.body, self.shape)
+        except AttributeError:
+            pass
+
         self.body = pymunk.Body(body_type=pymunk.Body.STATIC)
         self.body.position = helpers.transform_to_pymunk(self.x, self.y, self.width, self.height)
 
@@ -34,11 +40,21 @@ class Terrain:
 
         self.level.space.add(self.body, self.shape)
 
-    def reset(self):
+        self.shape.collision_type = collision_type
+
+        try:
+            self.collision_handler
+        except AttributeError:
+            self.collision_handler = self.level.space.add_collision_handler(collision_type, CollisionType.CHARACTER)
+
+    def collision_callback(self, arbiter, space, data):
+        pass
+    
+    def reset(self, collision_type: int):
         self.x = self.starting_x
         self.y = self.starting_y
 
-        self.setup_physics(self.level.space)
+        self.setup_physics(collision_type)
 
     def draw(self, win):
         pygame.draw.rect(win, Colors.DARK_GRAY3, self.rect)
@@ -47,6 +63,10 @@ class Terrain:
 class Floor(Terrain):
     def __init__(self, x, y, width, height):
         super().__init__(x, y, width, height)
+
+    def setup_physics(self, collision_type: int):
+        super().setup_physics(collision_type)
+
 
 
 class Lava(Terrain):

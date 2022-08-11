@@ -21,19 +21,25 @@ class Level:
 
         self.background = None
 
+        self.character = None
+
     def add_terrain(self, terrain):
         self.terrain.append(terrain)
 
         terrain.level = self
 
-        terrain.setup_physics()
+        terrain.setup_physics(len(self.terrain) + CollisionType.CHARACTER)
 
     def reset(self):
         self.space = pymunk.Space()
         self.space.gravity = (0, 981)
 
-        for terrain in self.terrain:
-            terrain.reset(self.space)
+        for counter, terrain in enumerate(self.terrain):
+            terrain.reset(counter + CollisionType.CHARACTER + 1)
+
+    def init_terrain(self):
+        for counter, terrain in enumerate(self.terrain):
+            terrain.setup_physics(counter + CollisionType.CHARACTER + 1)
 
     def draw(self, win):
         win.fill(Colors.LIGHT_GRAY3)

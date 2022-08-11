@@ -33,13 +33,16 @@ class Game:
 
         levels.generate_levels()
 
-        self.character = Blob(Level.get_level(1).space, (
+        self.character = Blob(Level.get_current_level().space, (
             Screen.WIDTH / 2, Screen.HEIGHT / 2), (60, 60))
-
+        
         self.character.x = Level.get_level(Level.current_level).start_x
         self.character.y = Level.get_level(Level.current_level).start_y
 
         self.running = True
+        
+
+
 
     def loop(self):
         while self.running:
@@ -71,6 +74,9 @@ class Game:
 
                 if event.key == pygame.K_r:
                     self.character.kill(Level.current_level)
+
+                if event.key == pygame.K_h:
+                    self.character.show_hitbox = not self.character.show_hitbox
 
             if event.type == Events.CHARACTER_DIE:
                 self.character = self.character.transform(CharacterType.BLOB)

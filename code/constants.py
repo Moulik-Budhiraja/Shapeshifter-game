@@ -107,3 +107,7 @@ class Direction(Enum):
     DOWN = auto()
     LEFT = auto()
     RIGHT = auto()
+
+class CollisionType:
+    CHARACTER = 1
+

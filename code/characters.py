@@ -6,22 +6,6 @@ from animations import Animation
 import helpers
 import math
 
-
-class Character:
-
-    def __init__(self):
-        self.transform(CharacterType.BLOB)
-
-    def transform(self, character_type):
-        self.character_type = character_type
-
-    def set_level(self, level):
-        self.level = level
-
-        # Reset level and add self to level space
-
-
-
 class BaseCharacter:
     def __init__(self, space, pos: tuple, size: tuple):
         self.space = space
@@ -36,6 +20,10 @@ class BaseCharacter:
 
         self.setup_physics()
 
+        self.init_level(Level.get_current_level())
+
+        self.show_hitbox = False
+
     @property
     def rect(self):
         return pygame.Rect(self.x, self.y, self.width, self.height)
@@ -43,18 +31,45 @@ class BaseCharacter:
     def setup_physics(self):
         pass
 
+    def post_transform(self):
+        pass
+
+    def set_level(self, level: Level):
+        level.reset()
+
+        self.space = level.space
+
+        self.x = level.start_x
+        self.y = level.start_y
+
+        level.character = self
+
+        self.setup_physics()
+
+    def init_level(self, level: Level):
+        self.space = level.space
+
+        level.init_terrain()
+
+        level.character = self
+
     def transform(self, type: CharacterType):
         if self.type == type:
             return self
 
-        new_character = CharacterTypes.get(type)
+        new_character: BaseCharacter = CharacterTypes.get(type)
         
         if new_character is not None:
             new_character = new_character(self.space, helpers.transform_to_pymunk(self.x, self.y, self.width, self.height), (self.original_width, self.original_height))
 
             new_character.body.velocity = self.body.velocity
+            new_character.body.angular_velocity = self.body.angular_velocity
+            
+            new_character.show_hitbox = self.show_hitbox
 
             self.space.remove(self.body, self.shape)
+
+            new_character.post_transform()
 
         return new_character
 
@@ -79,6 +94,9 @@ class BaseCharacter:
     def draw(self, win):
         win.blit(self._get_image(), (self.x, self.y))
 
+        if self.show_hitbox:
+            pygame.draw.rect(win, Colors.RED, self.rect, 2)
+
     
 
 
@@ -86,28 +104,28 @@ class Blob(BaseCharacter):
     def __init__(self, space, pos: tuple, size: tuple):
         super().__init__(space, pos, size)
 
+        self.type = CharacterType.BLOB
+
         self.image = Fonts.CHARACTER.render("BLOB", True, Colors.WHITE)
         self.image = pygame.transform.scale(self.image, (self.width, self.height))
 
     def setup_physics(self):
+        try:
+            self.space.remove(self.body, self.shape)
+        except AttributeError:
+            pass
+
         self.body = pymunk.Body()
         self.body.position = self.x, self.y
         self.shape = pymunk.Poly.create_box(self.body, (self.width, self.height))
         self.shape.mass = 1
         self.shape.friction = 0.99
         self.shape.elasticity = 0.2
+        self.shape.collision_type = CollisionType.CHARACTER
 
         self.space.add(self.body, self.shape)
 
         self.MAX_X_VELOCITY = 300
-
-    def set_level(self, level: Level):
-        self.space = level.space
-
-        self.x = level.start_x
-        self.y = level.start_y
-
-        self.setup_physics()
 
     def handle_movement(self, keys):
         floored = self.is_floored()
@@ -155,12 +173,13 @@ class Airplane(BaseCharacter):
     def __init__(self, space, pos: tuple, size: tuple):
         super().__init__(space, pos, size)
 
+        self.width = self.original_width // 2
         self.height = self.original_height // 2
 
         self.type = CharacterType.AIRPLANE
 
-        self.image = Fonts.CHARACTER.render("PLANE", True, Colors.WHITE)
-        self.image = pygame.transform.scale(self.image, (self.width, self.height))
+        # self.image = Fonts.CHARACTER.render("PLANE", True, Colors.WHITE)
+        self.image = pygame.transform.scale(self.image, (self.original_width, self.height))
 
         self.setup_physics()
 
@@ -174,32 +193,55 @@ class Airplane(BaseCharacter):
         self.body.position = self.x, self.y
         self.shape = pymunk.Poly.create_box(self.body, (self.width, self.height))
         self.shape.mass = 0.25
-        self.shape.friction = 0.7
-        self.shape.elasticity = 0.2
+        self.shape.friction = 0.99
+        self.shape.elasticity = 0
+        self.shape.collision_type = CollisionType.CHARACTER
+
+        self.agility = 5
+
         self.body.velocity_func = lambda body, gravity, damping, dt: pymunk.Body.update_velocity(body, (gravity[0], gravity[1] * 0.7), damping, dt)
 
         self.space.add(self.body, self.shape)
 
+    def post_transform(self):
+        try:
+            self.direction = self.body.velocity.x / abs(self.body.velocity.x)
+        except ZeroDivisionError:
+            self.direction = 1
+
     def handle_movement(self, keys):
-        direction = self.body.velocity.x / abs(self.body.velocity.x)
-
         velocity_magnitude = math.sqrt(self.body.velocity.x ** 2 + self.body.velocity.y ** 2)
-        angle = math.degrees(math.atan2(self.body.velocity.y, self.body.velocity.x))
-
-        print(angle, end="  |  ")
+        angle = math.atan2(self.body.velocity.y, self.body.velocity.x)
 
         if keys[pygame.K_UP]:
-            angle -= 4 * direction
+            angle -= 0.01 * self.direction * self.agility
         if keys[pygame.K_DOWN]:
-            angle += 4 * direction
+            angle += 0.01 * self.direction * self.agility
 
-        print(angle, end="\n")
-
-        self.body.velocity = (velocity_magnitude * math.cos(math.radians(angle)), velocity_magnitude * math.sin(math.radians(angle)))
-        self.body.angle = math.radians(angle)
+        self.body.velocity = (velocity_magnitude * math.cos(angle), velocity_magnitude * math.sin(angle))
 
 
-            
+    def _get_image(self):
+        angle = math.degrees(math.atan2(self.body.velocity.y, self.body.velocity.x))
+        if self.direction == 1:
+            image = self.image
+            image = pygame.transform.rotate(image, -angle)
+
+        else:
+            image = pygame.transform.flip(self.image, True, False)
+            image = pygame.transform.rotate(image, -angle - 180)
+
+        return image
+
+    def draw(self, win):
+        win.blit(self._get_image(), (self.x - self.original_width // 4, self.y))
+
+        if self.show_hitbox:
+            pygame.draw.rect(win, Colors.RED, self.rect, 2)
+
+        
+
+
 
 
 
