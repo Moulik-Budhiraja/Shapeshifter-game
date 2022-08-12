@@ -24,7 +24,7 @@ class BaseCharacter:
 
         self.init_level(Level.get_current_level())
 
-        self.show_hitbox = False
+        self.show_hitbox = True
 
     @property
     def rect(self):
@@ -131,7 +131,6 @@ class Blob(BaseCharacter):
         self.shape.elasticity = 0
         self.shape.collision_type = CollisionType.CHARACTER
 
-        self.jump_ready = False
         self.jump_strength = 1.3
         self.gravity = 3.5
 
@@ -142,8 +141,11 @@ class Blob(BaseCharacter):
         self.MAX_X_VELOCITY = 300
 
     def handle_movement(self, keys):
-        if not self.jump_ready:
+        in_air = self._in_air()
+        if in_air:
             self.body.velocity = (self.body.velocity.x * 0.99, self.body.velocity.y)
+            self.body.angle = 0
+            self.body.angular_velocity = 0
 
         if keys[pygame.K_LEFT]:
             if not self.body.velocity.x < -self.MAX_X_VELOCITY:
@@ -152,21 +154,33 @@ class Blob(BaseCharacter):
             if not self.body.velocity.x > self.MAX_X_VELOCITY:
                 self.body.apply_impulse_at_local_point((50, 0), (0, 15))
         if keys[pygame.K_UP]:
-            if self.jump_ready:
+            if not in_air:
                 self.body.apply_impulse_at_local_point((0, -750 * self.jump_strength))
-                self.jump_ready = False
 
-        if abs(self.body.velocity.y) < 0.01:
-            self.jump_ready = True
 
-        if self.body.velocity.y > 0.1:
-            self.jump_ready = False
+        
 
     def _in_air(self):
+        bottom = self.shape.bb.top
+        right = self.shape.bb.right
+        left = self.shape.bb.left
+
+        if self.body.angle < 0:
+            point1 = (right, bottom + self.width * math.sin(self.body.angle) + 1)
+            point2 = (right - self.width * math.cos(self.body.angle), bottom + 1)
+
+        else:
+            point1 = (left, bottom - self.width * math.sin(self.body.angle) + 1)
+            point2 = (left + self.width * math.cos(self.body.angle), bottom + 1)
+
+        
         for terrain in Level.get_current_level().terrain:
-            point = 0
             path = mplpath.Path(terrain.polygon)
-            inside = path.contains_point(point)
+            if path.contains_point(point1) or path.contains_point(point2):
+                return False
+
+        return True
+
 
     def velocity_adjustments(self):
         if self.body.angle > 0.523599: # 30 degrees
@@ -196,8 +210,25 @@ class Blob(BaseCharacter):
 
             pygame.draw.circle(win, Colors.RED, self.body._get_position(), 2)
 
-            pygame.draw.circle(win, Colors.RED, (self.shape.bb.left, self.shape.bb.bottom), 2)
-            pygame.draw.circle(win, Colors.RED, (self.shape.bb.right, self.shape.bb.bottom), 2)
+            # pygame.draw.circle(win, Colors.BLACK, self.rect.bottomright, 2)
+
+            # pygame.draw.circle(win, Colors.RED, (self.shape.bb.left, self.shape.bb.bottom), 2)
+            # pygame.draw.circle(win, Colors.RED, (self.shape.bb.right, self.shape.bb.bottom), 2)
+
+            bottom = self.shape.bb.top
+            right = self.shape.bb.right
+            left = self.shape.bb.left
+
+            if self.body.angle < 0:
+                point1 = (right, bottom + self.width * math.sin(self.body.angle) + 1)
+                point2 = (right - self.width * math.cos(self.body.angle), bottom + 1)
+
+            else:
+                point1 = (left, bottom - self.width * math.sin(self.body.angle) + 1)
+                point2 = (left + self.width * math.cos(self.body.angle), bottom + 1)
+
+            pygame.draw.circle(win, Colors.GREEN, point1, 2)
+            pygame.draw.circle(win, Colors.GREEN, point2, 2)
 
 
     
