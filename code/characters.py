@@ -128,11 +128,11 @@ class Blob(BaseCharacter):
         self.shape = pymunk.Poly.create_box(self.body, (self.width, self.height))
         self.shape.mass = 1
         self.shape.friction = 0.90
-        self.shape.elasticity = 0
+        self.shape.elasticity = 0.2
         self.shape.collision_type = CollisionType.CHARACTER
 
         self.jump_strength = 1.3
-        self.gravity = 3.5
+        self.gravity = 3
 
         self.body.velocity_func = lambda body, gravity, damping, dt: pymunk.Body.update_velocity(body, (gravity[0], gravity[1] * self.gravity), damping, dt)
 
@@ -155,7 +155,7 @@ class Blob(BaseCharacter):
                 self.body.apply_impulse_at_local_point((50, 0), (0, 15))
         if keys[pygame.K_UP]:
             if not in_air:
-                self.body.apply_impulse_at_local_point((0, -750 * self.jump_strength))
+                self.body.apply_impulse_at_local_point((0, -700 * self.jump_strength))
 
     def _in_air(self):
         bottom = self.shape.bb.top
@@ -350,7 +350,7 @@ class Weight(BaseCharacter):
         self.body.position = self.x, self.y
         self.shape = pymunk.Circle(self.body, self.width // 2)
         self.shape.mass = 1
-        self.shape.friction = 0
+        self.shape.friction = 0.1
         self.shape.elasticity = 0
         self.shape.collision_type = CollisionType.CHARACTER
 
