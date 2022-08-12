@@ -25,6 +25,10 @@ class Terrain:
     def rect(self):
         return pygame.Rect(self.x, self.y, self.width, self.height)
 
+    @property
+    def polygon(self):
+        return [self.rect.topleft, self.rect.topright, self.rect.bottomright, self.rect.bottomleft]
+
     def setup_physics(self, collision_type: int):
         try:
             self.level.space.remove(self.body, self.shape)
@@ -54,11 +58,6 @@ class Terrain:
         self.collision_handler.begin = self.collision_callback
 
     def collision_callback(self, arbiter, space, data):
-        character = self.level.character
-
-        if character.type == CharacterType.BLOB:
-            print("Jump Ready")
-            character.jump_ready = True
         return True
     
     def reset(self, collision_type: int):
@@ -117,6 +116,10 @@ class Polygon(Terrain):
         super().__init__(self.x, self.y, self.width, self.height)
 
         self.vertices = vertices
+
+    @property
+    def polygon(self):
+        return self.vertices
 
     def setup_physics(self, collision_type: int):
         try:
@@ -186,8 +189,8 @@ class Trampoline(Terrain):
 
         self.power = power
 
-    def setup_physics(self):
-        super().setup_physics()
+    def setup_physics(self, collision_type: int):
+        super().setup_physics(collision_type)
 
         self.shape.elasticity *= self.power
 

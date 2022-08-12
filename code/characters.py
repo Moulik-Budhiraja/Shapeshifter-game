@@ -6,6 +6,7 @@ from animations import Animation
 import helpers
 import math
 import images
+import matplotlib.path as mplpath
 
 class BaseCharacter:
     def __init__(self, space, pos: tuple, size: tuple):
@@ -161,6 +162,11 @@ class Blob(BaseCharacter):
         if self.body.velocity.y > 0.1:
             self.jump_ready = False
 
+    def _in_air(self):
+        for terrain in Level.get_current_level().terrain:
+            point = 0
+            path = mplpath.Path(terrain.polygon)
+            inside = path.contains_point(point)
 
     def velocity_adjustments(self):
         if self.body.angle > 0.523599: # 30 degrees
@@ -189,6 +195,10 @@ class Blob(BaseCharacter):
             win.blit(pygame.transform.rotate(temp_surface, math.degrees(-self.body.angle)), rect)
 
             pygame.draw.circle(win, Colors.RED, self.body._get_position(), 2)
+
+            pygame.draw.circle(win, Colors.RED, (self.shape.bb.left, self.shape.bb.bottom), 2)
+            pygame.draw.circle(win, Colors.RED, (self.shape.bb.right, self.shape.bb.bottom), 2)
+
 
     
 
