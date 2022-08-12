@@ -5,6 +5,7 @@ from constants import *
 from animations import Animation
 import helpers
 import math
+import images
 
 class BaseCharacter:
     def __init__(self, space, pos: tuple, size: tuple):
@@ -35,7 +36,10 @@ class BaseCharacter:
         pass
 
     def set_level(self, level: Level):
+        Level.current_level = level.number
         level.reset()
+
+        pygame.event.post(pygame.event.Event(Events.CHARACTER_DIE))
 
         self.space = level.space
 
@@ -45,6 +49,7 @@ class BaseCharacter:
         level.character = self
 
         self.setup_physics()
+
 
     def init_level(self, level: Level):
         self.space = level.space
@@ -106,7 +111,7 @@ class Blob(BaseCharacter):
 
         self.type = CharacterType.BLOB
 
-        self.image = Fonts.CHARACTER.render("BLOB", True, Colors.WHITE)
+        self.image = images.Characters.Blob.IDLE
         self.image = pygame.transform.scale(self.image, (self.width, self.height))
 
     def setup_physics(self):
@@ -114,57 +119,76 @@ class Blob(BaseCharacter):
             self.space.remove(self.body, self.shape)
         except AttributeError:
             pass
+        except AssertionError:
+            pass
 
         self.body = pymunk.Body()
         self.body.position = self.x, self.y
         self.shape = pymunk.Poly.create_box(self.body, (self.width, self.height))
         self.shape.mass = 1
-        self.shape.friction = 0.99
-        self.shape.elasticity = 0.2
+        self.shape.friction = 0.90
+        self.shape.elasticity = 0
         self.shape.collision_type = CollisionType.CHARACTER
+
+        self.jump_ready = False
+        self.jump_strength = 1.3
+        self.gravity = 3.5
+
+        self.body.velocity_func = lambda body, gravity, damping, dt: pymunk.Body.update_velocity(body, (gravity[0], gravity[1] * self.gravity), damping, dt)
 
         self.space.add(self.body, self.shape)
 
         self.MAX_X_VELOCITY = 300
 
     def handle_movement(self, keys):
-        floored = self.is_floored()
-        if not floored:
+        if not self.jump_ready:
             self.body.velocity = (self.body.velocity.x * 0.99, self.body.velocity.y)
 
         if keys[pygame.K_LEFT]:
             if not self.body.velocity.x < -self.MAX_X_VELOCITY:
-                self.body.apply_impulse_at_local_point((-50, 0))
+                self.body.apply_impulse_at_local_point((-50, 0), (0, 15))
         if keys[pygame.K_RIGHT]:
             if not self.body.velocity.x > self.MAX_X_VELOCITY:
-                self.body.apply_impulse_at_local_point((50, 0))
+                self.body.apply_impulse_at_local_point((50, 0), (0, 15))
         if keys[pygame.K_UP]:
-            if floored:
-                self.body.apply_impulse_at_local_point((0, -500))
+            if self.jump_ready:
+                self.body.apply_impulse_at_local_point((0, -750 * self.jump_strength))
+                self.jump_ready = False
 
+        if abs(self.body.velocity.y) < 0.01:
+            self.jump_ready = True
 
-    def is_floored(self):
-        for terrain in Level.get_current_level().terrain:
-            if not self.rect.colliderect(terrain.rect.copy().inflate(2, 2)):
-                continue
+        if self.body.velocity.y > 0.1:
+            self.jump_ready = False
 
-            if not terrain.x < self.rect.centerx < terrain.x + terrain.width:
-                continue
-
-            if not terrain.y > self.rect.centery:
-                continue
-
-            break
-        else:
-            return False
-
-        return True
 
     def velocity_adjustments(self):
-        self.body.angular_velocity = 0
+        if self.body.angle > 0.523599: # 30 degrees
+            self.body.angular_velocity = -1.5
+        elif self.body.angle < -0.523599: 
+            self.body.angular_velocity = 1.5
 
     def update_location(self):
         self.x, self.y = helpers.transform_to_pygame(*self.body.position, self.width, self.height)
+
+    def _get_image(self):
+        return pygame.transform.rotate(self.image, math.degrees(-self.body.angle))
+
+    def draw(self, win):
+        image = self._get_image()
+        rect = image.get_rect()
+        rect.center = helpers.transform_to_pymunk(self.x, self.y + 2, self.width, self.height)
+
+        # win.blit(image, rect)
+
+        if self.show_hitbox:
+            temp_surface = pygame.Surface((self.rect.width, self.rect.height), pygame.SRCALPHA, 32)
+            temp_surface = temp_surface.convert_alpha()
+            pygame.draw.rect(temp_surface, Colors.RED, (0, 0, self.rect.width, self.rect.height), 2)
+
+            win.blit(pygame.transform.rotate(temp_surface, math.degrees(-self.body.angle)), rect)
+
+            pygame.draw.circle(win, Colors.RED, self.body._get_position(), 2)
 
     
 
@@ -178,7 +202,7 @@ class Airplane(BaseCharacter):
 
         self.type = CharacterType.AIRPLANE
 
-        # self.image = Fonts.CHARACTER.render("PLANE", True, Colors.WHITE)
+        # self.image = images.Characters.Plane.PLANE
         self.image = pygame.transform.scale(self.image, (self.original_width, self.height))
 
         self.setup_physics()
@@ -187,6 +211,8 @@ class Airplane(BaseCharacter):
         try:
             self.space.remove(self.body, self.shape)
         except AttributeError:
+            pass
+        except AssertionError:
             pass
 
         self.body = pymunk.Body()
@@ -198,8 +224,9 @@ class Airplane(BaseCharacter):
         self.shape.collision_type = CollisionType.CHARACTER
 
         self.agility = 5
+        self.gravity = 0.7
 
-        self.body.velocity_func = lambda body, gravity, damping, dt: pymunk.Body.update_velocity(body, (gravity[0], gravity[1] * 0.7), damping, dt)
+        self.body.velocity_func = lambda body, gravity, damping, dt: pymunk.Body.update_velocity(body, (gravity[0], gravity[1] * self.gravity), damping, dt)
 
         self.space.add(self.body, self.shape)
 
@@ -218,11 +245,17 @@ class Airplane(BaseCharacter):
         if keys[pygame.K_DOWN]:
             angle += 0.01 * self.direction * self.agility
 
-        self.body.velocity = (velocity_magnitude * math.cos(angle), velocity_magnitude * math.sin(angle))
+        self.body.velocity = (velocity_magnitude * math.cos(angle) * 0.99, velocity_magnitude * math.sin(angle))
 
 
     def _get_image(self):
         angle = math.degrees(math.atan2(self.body.velocity.y, self.body.velocity.x))
+        if abs(self.body.velocity.x) < 0.01 and abs(self.body.velocity.y) < 0.01:
+            if self.direction == 1:
+                angle = 0
+            else:
+                angle = -180
+
         if self.direction == 1:
             image = self.image
             image = pygame.transform.rotate(image, -angle)
@@ -230,6 +263,8 @@ class Airplane(BaseCharacter):
         else:
             image = pygame.transform.flip(self.image, True, False)
             image = pygame.transform.rotate(image, -angle - 180)
+
+            
 
         return image
 
@@ -239,10 +274,8 @@ class Airplane(BaseCharacter):
         if self.show_hitbox:
             pygame.draw.rect(win, Colors.RED, self.rect, 2)
 
-        
-
-
-
+    def velocity_adjustments(self):
+        self.body.angular_velocity = 0
 
 
 
@@ -260,10 +293,43 @@ class Weight(BaseCharacter):
     def __init__(self, space, pos: tuple, size: tuple):
         super().__init__(space, pos, size)
 
-        self.image = Fonts.CHARACTER.render("WEIGHT", True, Colors.WHITE)
+        self.width = self.original_width // 2
+        self.height = self.original_height // 2
+
+        self.image = images.Characters.Weight.BALL
         self.image = pygame.transform.scale(self.image, (self.width, self.height))
 
         self.type = CharacterType.WEIGHT
+
+        self.setup_physics()
+
+    def setup_physics(self):
+        try:
+            self.space.remove(self.body, self.shape)
+        except AttributeError:
+            pass
+        except AssertionError:
+            pass
+
+        self.body = pymunk.Body()
+        self.body.position = self.x, self.y
+        self.shape = pymunk.Circle(self.body, self.width // 2)
+        self.shape.mass = 1
+        self.shape.friction = 0
+        self.shape.elasticity = 0
+        self.shape.collision_type = CollisionType.CHARACTER
+
+        self.gravity = 8
+
+        self.body.velocity_func = lambda body, gravity, damping, dt: pymunk.Body.update_velocity(body, (gravity[0], gravity[1] * self.gravity), damping, dt)
+
+        self.space.add(self.body, self.shape)
+
+    def draw(self, win):
+        # win.blit(self._get_image(), (self.x, self.y))
+
+        if self.show_hitbox:
+            pygame.draw.circle(win, Colors.RED, helpers.transform_to_pymunk(self.x, self.y, self.width, self.height), self.width // 2, 2)
 
 
 class Plunger(BaseCharacter):

@@ -39,6 +39,8 @@ class Game:
         self.character.x = Level.get_level(Level.current_level).start_x
         self.character.y = Level.get_level(Level.current_level).start_y
 
+        self.character.setup_physics()
+
         self.running = True
         
 
@@ -73,7 +75,7 @@ class Game:
                         CharacterType.PLUNGER)
 
                 if event.key == pygame.K_r:
-                    self.character.kill(Level.current_level)
+                    self.character.set_level(Level.get_current_level())
 
                 if event.key == pygame.K_h:
                     self.character.show_hitbox = not self.character.show_hitbox

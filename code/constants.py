@@ -110,4 +110,3 @@ class Direction(Enum):
 
 class CollisionType:
     CHARACTER = 1
-

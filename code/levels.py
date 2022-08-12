@@ -18,9 +18,12 @@ def generate_levels():
 
     # Borders
     level_1.add_terrain(Floor(0, Screen.HEIGHT - 25, Screen.WIDTH, 25))
-    level_1.add_terrain(Floor(Screen.WIDTH - 25, 0, 25, Screen.HEIGHT))
-    level_1.add_terrain(Floor(0, 0, Screen.WIDTH, 25))
-    level_1.add_terrain(Floor(0, 0, 25, Screen.HEIGHT))
+    level_1.add_terrain(Wall(0, 0, Screen.WIDTH, 25))
+    level_1.add_terrain(Wall(0, 0, 25, Screen.HEIGHT))
+    level_1.add_terrain(Wall(Screen.WIDTH - 25, 0, 25, Screen.HEIGHT))
+
+    # Ramp
+    level_1.add_terrain(Polygon((500, Screen.HEIGHT - 25), (530, Screen.HEIGHT - 25), (700, 550), (630, 550), (500, Screen.HEIGHT - 25)))
 
     # Goal
     level_1.add_terrain(Goal(Screen.WIDTH - 100, Screen.HEIGHT - 100, 50, 50))
