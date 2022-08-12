@@ -106,7 +106,7 @@ class Game:
                 if path.contains_point(mouse):
                     terrains.append(terrain)
 
-            print(" " * 100, end="\r")
+            print(" " * 1000, end="\r")
             print(pygame.mouse.get_pos(), [i for i in terrains], sep=" | ", end="\r")
 
         for _ in range(self.SUB_STEPS):

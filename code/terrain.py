@@ -126,7 +126,7 @@ class Polygon(Terrain):
         self.vertices = vertices
 
     def __repr__(self) -> str:
-        return f"Polygon({self.x}, {self.y}, {self.width}, {self.height})"
+        return f"Polygon({self.vertices})"
 
     @property
     def polygon(self):
@@ -166,6 +166,9 @@ class Polygon(Terrain):
 
         if self.level.character.show_hitbox:
             pygame.draw.polygon(win, Colors.RED, [v for v in self.shape.get_vertices()], 2)
+
+            for vertex in self.shape.get_vertices():
+                pygame.draw.circle(win, Colors.RED, vertex, 3)
 
 
 

@@ -101,7 +101,7 @@ def generate_levels():
     # Goal
     level_4.add_terrain(Goal(Screen.WIDTH - 50 , 540, 25, 65))
 
-    level_5 = Level("level5", 5, (100, Screen.HEIGHT - 300))
+    level_5 = Level("level5", 5, (100, Screen.HEIGHT - 500))
     
     #Level 5 borders
     level_5.add_terrain(Floor(0, Screen.HEIGHT - 25, Screen.WIDTH, 25))
@@ -112,7 +112,10 @@ def generate_levels():
     #Level 5 Big box
     platform(level_5, 25, 150, 195, Screen.HEIGHT)
     #Level 5 Ramp
+
     level_5.add_terrain(Polygon((220, 150), (285, 315), (375, 400), (420, 425), (460, 450), (510, 460), (600, 450), (620, 445), (650, 430), (675, 400), (675, 605), (220, 605)))
+
+
 
     # # Level 5 Tramampoline
     # level_5.add_terrain(Trampoline(250, Screen.HEIGHT - 25, 75, 25, 50))
