@@ -24,7 +24,7 @@ class BaseCharacter:
 
         self.init_level(Level.get_current_level())
 
-        self.show_hitbox = True
+        self.show_hitbox = False
 
     @property
     def rect(self):
@@ -157,9 +157,6 @@ class Blob(BaseCharacter):
             if not in_air:
                 self.body.apply_impulse_at_local_point((0, -750 * self.jump_strength))
 
-
-        
-
     def _in_air(self):
         bottom = self.shape.bb.top
         right = self.shape.bb.right
@@ -177,7 +174,8 @@ class Blob(BaseCharacter):
         for terrain in Level.get_current_level().terrain:
             path = mplpath.Path(terrain.polygon)
             if path.contains_point(point1) or path.contains_point(point2):
-                return False
+                if terrain.jumpable:
+                    return False
 
         return True
 
@@ -199,7 +197,7 @@ class Blob(BaseCharacter):
         rect = image.get_rect()
         rect.center = helpers.transform_to_pymunk(self.x, self.y + 2, self.width, self.height)
 
-        # win.blit(image, rect)
+        win.blit(image, rect)
 
         if self.show_hitbox:
             temp_surface = pygame.Surface((self.rect.width, self.rect.height), pygame.SRCALPHA, 32)
@@ -210,10 +208,6 @@ class Blob(BaseCharacter):
 
             pygame.draw.circle(win, Colors.RED, self.body._get_position(), 2)
 
-            # pygame.draw.circle(win, Colors.BLACK, self.rect.bottomright, 2)
-
-            # pygame.draw.circle(win, Colors.RED, (self.shape.bb.left, self.shape.bb.bottom), 2)
-            # pygame.draw.circle(win, Colors.RED, (self.shape.bb.right, self.shape.bb.bottom), 2)
 
             bottom = self.shape.bb.top
             right = self.shape.bb.right
@@ -243,7 +237,7 @@ class Airplane(BaseCharacter):
 
         self.type = CharacterType.AIRPLANE
 
-        # self.image = images.Characters.Plane.PLANE
+        self.image = images.Characters.Plane.PLANE
         self.image = pygame.transform.scale(self.image, (self.original_width, self.height))
 
         self.setup_physics()
@@ -367,7 +361,7 @@ class Weight(BaseCharacter):
         self.space.add(self.body, self.shape)
 
     def draw(self, win):
-        # win.blit(self._get_image(), (self.x, self.y))
+        win.blit(self._get_image(), (self.x, self.y))
 
         if self.show_hitbox:
             pygame.draw.circle(win, Colors.RED, helpers.transform_to_pymunk(self.x, self.y, self.width, self.height), self.width // 2, 2)

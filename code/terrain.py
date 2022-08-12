@@ -7,7 +7,7 @@ import math
 
 
 class Terrain:
-    def __init__(self, x, y, width, height):
+    def __init__(self, x, y, width, height, jumpable: bool = False):
         self.x = x
         self.y = y
         self.width = width
@@ -15,6 +15,8 @@ class Terrain:
 
         self.starting_x = x
         self.starting_y = y
+
+        self.jumpable = jumpable
 
         self.level: Level = None
 
@@ -74,8 +76,8 @@ class Terrain:
 
 
 class Floor(Terrain):
-    def __init__(self, x, y, width, height):
-        super().__init__(x, y, width, height)
+    def __init__(self, x, y, width, height, jumpable: bool = True):
+        super().__init__(x, y, width, height, jumpable)
 
     def setup_physics(self, collision_type: int):
         super().setup_physics(collision_type)
@@ -88,8 +90,8 @@ class Floor(Terrain):
 
 
 class Wall(Terrain):
-    def __init__(self, x, y, width, height):
-        super().__init__(x, y, width, height)
+    def __init__(self, x, y, width, height, jumpable: bool = False):
+        super().__init__(x, y, width, height, jumpable)
 
     def setup_physics(self, collision_type: int):
         super().setup_physics(collision_type)
@@ -104,7 +106,7 @@ class Wall(Terrain):
 
 
 class Polygon(Terrain):
-    def __init__(self, *vertices):
+    def __init__(self, *vertices, jumpable: bool = True):
         x_points = [vertex[0] for vertex in vertices]
         y_points = [vertex[1] for vertex in vertices]
 
@@ -113,7 +115,7 @@ class Polygon(Terrain):
         self.width = max(x_points) - self.x
         self.height = max(y_points) - self.y
 
-        super().__init__(self.x, self.y, self.width, self.height)
+        super().__init__(self.x, self.y, self.width, self.height, jumpable)
 
         self.vertices = vertices
 
@@ -160,8 +162,8 @@ class Polygon(Terrain):
 
 
 class Lava(Terrain):
-    def __init__(self,  x, y, width, height):
-        super().__init__( x, y, width, height)
+    def __init__(self,  x, y, width, height, jumpable: bool = False):
+        super().__init__( x, y, width, height, jumpable)
 
     
     def setup_physics(self, collision_type: int):
@@ -184,8 +186,8 @@ class Lava(Terrain):
 
 
 class Trampoline(Terrain):
-    def __init__(self,  x, y, width, height, power):
-        super().__init__( x, y, width, height)
+    def __init__(self,  x, y, width, height, power, jumpable: bool = True):
+        super().__init__( x, y, width, height, jumpable)
 
         self.power = power
 
@@ -202,8 +204,8 @@ class Trampoline(Terrain):
 
 
 class Goal(Terrain):
-    def __init__(self,  x, y, width, height, target=None):
-        super().__init__( x, y, width, height)
+    def __init__(self,  x, y, width, height, target=None, jumpable: bool = False):
+        super().__init__( x, y, width, height, jumpable)
 
         self.target = target
 

@@ -97,7 +97,7 @@ class Game:
 
         Level.get_level(Level.current_level).draw(self.WIN)
 
-        Level.get_level(Level.current_level).space.debug_draw(self.draw_options)
+        # Level.get_level(Level.current_level).space.debug_draw(self.draw_options)
 
         self.character.draw(self.WIN)
 
