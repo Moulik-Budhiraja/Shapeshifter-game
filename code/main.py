@@ -1,11 +1,13 @@
 import pygame
 import pymunk
 import pymunk.pygame_util
+import matplotlib.path as mplpath
 from constants import *
 from characters import Blob, Airplane, Spring, Weight, Plunger
 from level import Level
 import levels
 pygame.init()
+import os
 
 
 class Game:
@@ -29,7 +31,7 @@ class Game:
 
         self.draw_options = pymunk.pygame_util.DrawOptions(self.WIN)
 
-        Level.current_level = 1
+        Level.current_level = 4
 
         levels.generate_levels()
 
@@ -42,6 +44,9 @@ class Game:
         self.character.setup_physics()
 
         self.running = True
+
+        os.system("clear")
+        self.line_counter = 0
         
 
 
@@ -79,12 +84,30 @@ class Game:
 
                 if event.key == pygame.K_h:
                     self.character.show_hitbox = not self.character.show_hitbox
+                if event.key == pygame.K_SPACE:
+                    print(f"\r{self.line_counter}. {pygame.mouse.get_pos()}")
+                    self.line_counter += 1
+
+                if event.key == pygame.K_c:
+                    os.system("clear")
+                    self.line_counter = 0
 
             if event.type == Events.CHARACTER_DIE:
                 self.character = self.character.transform(CharacterType.BLOB)
 
         self.character.handle_movement(
             pygame.key.get_pressed())
+
+        if self.character.show_hitbox:
+            terrains = []
+            mouse = pygame.mouse.get_pos()
+            for terrain in Level.get_current_level().terrain:
+                path = mplpath.Path(terrain.polygon)
+                if path.contains_point(mouse):
+                    terrains.append(terrain)
+
+            print(" " * 100, end="\r")
+            print(pygame.mouse.get_pos(), [i for i in terrains], sep=" | ", end="\r")
 
         for _ in range(self.SUB_STEPS):
             Level.get_level(Level.current_level).space.step(self.DT / self.SUB_STEPS)

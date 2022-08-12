@@ -79,6 +79,9 @@ class Floor(Terrain):
     def __init__(self, x, y, width, height, jumpable: bool = True):
         super().__init__(x, y, width, height, jumpable)
 
+    def __repr__(self) -> str:
+        return f"Floor({self.x}, {self.y}, {self.width}, {self.height})"
+
     def setup_physics(self, collision_type: int):
         super().setup_physics(collision_type)
 
@@ -92,6 +95,9 @@ class Floor(Terrain):
 class Wall(Terrain):
     def __init__(self, x, y, width, height, jumpable: bool = False):
         super().__init__(x, y, width, height, jumpable)
+
+    def __repr__(self) -> str:
+        return f"Wall({self.x}, {self.y}, {self.width}, {self.height})"
 
     def setup_physics(self, collision_type: int):
         super().setup_physics(collision_type)
@@ -118,6 +124,9 @@ class Polygon(Terrain):
         super().__init__(self.x, self.y, self.width, self.height, jumpable)
 
         self.vertices = vertices
+
+    def __repr__(self) -> str:
+        return f"Polygon({self.x}, {self.y}, {self.width}, {self.height})"
 
     @property
     def polygon(self):
@@ -165,6 +174,9 @@ class Lava(Terrain):
     def __init__(self,  x, y, width, height, jumpable: bool = False):
         super().__init__( x, y, width, height, jumpable)
 
+    def __repr__(self) -> str:
+        return f"Lava({self.x}, {self.y}, {self.width}, {self.height})"
+
     
     def setup_physics(self, collision_type: int):
         super().setup_physics(collision_type)
@@ -191,6 +203,9 @@ class Trampoline(Terrain):
 
         self.power = power
 
+    def __repr__(self) -> str:
+        return f"Trampoline({self.x}, {self.y}, {self.width}, {self.height})"
+
     def setup_physics(self, collision_type: int):
         super().setup_physics(collision_type)
 
@@ -208,6 +223,9 @@ class Goal(Terrain):
         super().__init__( x, y, width, height, jumpable)
 
         self.target = target
+
+    def __repr__(self) -> str:
+        return f"Goal({self.x}, {self.y}, {self.width}, {self.height})"
 
     def setup_physics(self, collision_type: int):
         super().setup_physics(collision_type)
