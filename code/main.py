@@ -31,7 +31,7 @@ class Game:
 
         self.draw_options = pymunk.pygame_util.DrawOptions(self.WIN)
 
-        Level.current_level = 4
+        Level.current_level = 5
 
         levels.generate_levels()
 

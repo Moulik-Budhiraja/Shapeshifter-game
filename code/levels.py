@@ -99,5 +99,30 @@ def generate_levels():
     #Drop piece leading to goal (EXTRA BIG ASS BOX)
     platform(level_4, 830, 25, Screen.WIDTH, 515)
     # Goal
-    level_4.add_terrain(Goal(Screen.WIDTH - 50 , 540, 25, 65
-    , target=1))
+    level_4.add_terrain(Goal(Screen.WIDTH - 50 , 540, 25, 65))
+
+    level_5 = Level("level5", 5, (100, Screen.HEIGHT - 300))
+    
+    #Level 5 borders
+    level_5.add_terrain(Floor(0, Screen.HEIGHT - 25, Screen.WIDTH, 25))
+    level_5.add_terrain(Wall(Screen.WIDTH - 25, 0, 25, Screen.HEIGHT))
+    level_5.add_terrain(Wall(0, 0, Screen.WIDTH, 25))
+    level_5.add_terrain(Wall(0, 0, 25, Screen.HEIGHT))
+
+    #Level 5 Big box
+    platform(level_5, 25, 150, 195, Screen.HEIGHT)
+    #Level 5 Ramp
+    level_5.add_terrain(Polygon((220, 150), (285, 315), (375, 400), (420, 425), (460, 450), (510, 460), (600, 450), (620, 445), (650, 430), (675, 400), (675, 605), (220, 605)))
+
+    # # Level 5 Tramampoline
+    # level_5.add_terrain(Trampoline(250, Screen.HEIGHT - 25, 75, 25, 50))
+    # # Level 5 Polygon triangle thingy
+    # level_5.add_terrain(Polygon((250, 300), (500, 25), (250, 25), jumpable=False))
+    # #Level 5 second bounce triangle
+    # level_5.add_terrain(Polygon((750, 25), (500, 25), (750, 300), jumpable=False))
+    # #Level 5 Triangle on big ass box
+    # level_5.add_terrain(Polygon((330, 350), (495, 260), (660, 350), jumpable=False))
+    # #Level 5 big ass box
+    # platform(level_5, 330, 350, 330, 330)
+    # #Level 
+    
