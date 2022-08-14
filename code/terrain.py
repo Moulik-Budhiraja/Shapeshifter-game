@@ -132,9 +132,14 @@ class Polygon(Terrain):
     def polygon(self):
         return self.vertices
 
+    @property
+    def triangles(self):
+        polygon = [list(vertex) for vertex in self.vertices]
+        return helpers.Triangulate.triangulate(polygon)
+
     def setup_physics(self, collision_type: int):
         try:
-            self.level.space.remove(self.body, self.shape)
+            self.level.space.remove(self.body, *self.shapes)
         except AttributeError:
             pass
         except AssertionError:
@@ -143,13 +148,15 @@ class Polygon(Terrain):
         self.body = pymunk.Body(body_type=pymunk.Body.STATIC)
         self.body.position = (0, 0)
 
-        self.shape = pymunk.Poly(self.body, self.vertices)
-        self.shape.friction = 0.5
-        self.shape.elasticity = 0.5
+        self.shapes = []
+        for triangle in self.triangles:
+            shape = pymunk.Poly(self.body, triangle)
+            shape.friction = 0.5
+            shape.elasticity = 0.5
+            shape.collision_type = collision_type
+            self.shapes.append(shape)
 
-        self.level.space.add(self.body, self.shape)
-
-        self.shape.collision_type = collision_type
+        self.level.space.add(self.body, *self.shapes)
 
         try:
             del self.collision_handler
@@ -161,14 +168,19 @@ class Polygon(Terrain):
     def draw(self, win):
         # pygame.draw.rect(win, Colors.DARK_GRAY, self.rect)
 
-        pygame.draw.polygon(win, Colors.DARK_GRAY, [v for v in self.shape.get_vertices()])
+        pygame.draw.polygon(win, Colors.DARK_GRAY, [v for v in self.vertices])
 
 
         if self.level.character.show_hitbox:
-            pygame.draw.polygon(win, Colors.RED, [v for v in self.shape.get_vertices()], 2)
-
-            for vertex in self.shape.get_vertices():
+            for vertex in self.vertices:
                 pygame.draw.circle(win, Colors.RED, vertex, 3)
+
+            for triangle in self.triangles:
+                pygame.draw.polygon(win, Colors.ORANGE, triangle, 1)
+
+            pygame.draw.polygon(win, Colors.RED, [v for v in self.vertices], 2)
+
+
 
 
 

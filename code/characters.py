@@ -7,6 +7,7 @@ import helpers
 import math
 import images
 import matplotlib.path as mplpath
+import terrain as ter
 
 class BaseCharacter:
     def __init__(self, space, pos: tuple, size: tuple):
@@ -141,8 +142,7 @@ class Blob(BaseCharacter):
         self.MAX_X_VELOCITY = 300
 
     def handle_movement(self, keys):
-        in_air = self._in_air()
-        if in_air:
+        if self._in_air():
             self.body.velocity = (self.body.velocity.x * 0.99, self.body.velocity.y)
             self.body.angle = 0
             self.body.angular_velocity = 0
@@ -154,8 +154,36 @@ class Blob(BaseCharacter):
             if not self.body.velocity.x > self.MAX_X_VELOCITY:
                 self.body.apply_impulse_at_local_point((50, 0), (0, 15))
         if keys[pygame.K_UP]:
-            if not in_air:
+            if self._can_jump():
                 self.body.apply_impulse_at_local_point((0, -700 * self.jump_strength))
+
+    def _can_jump(self):
+        if self._in_air():
+            return False
+        
+        bottom = self.shape.bb.top
+        right = self.shape.bb.right
+        left = self.shape.bb.left
+
+        if self.body.angle < 0:
+            point1 = (right, bottom + self.width * math.sin(self.body.angle) + 1)
+            point2 = (right - self.width * math.cos(self.body.angle), bottom + 1)
+
+        else:
+            point1 = (left, bottom - self.width * math.sin(self.body.angle) + 1)
+            point2 = (left + self.width * math.cos(self.body.angle), bottom + 1)
+
+        
+        for terrain in Level.get_current_level().terrain:
+            path = mplpath.Path(terrain.polygon)
+            if type(terrain) != ter.Polygon:
+                if path.contains_point(point1) or path.contains_point(point2):
+                    return True
+            else:
+                if path.contains_point(point1) and path.contains_point(point2):
+                    return True
+
+
 
     def _in_air(self):
         bottom = self.shape.bb.top
