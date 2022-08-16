@@ -22,16 +22,16 @@ class Game:
         self.loop()
 
     def setup(self):
-        self.FPS = 60
+        self.FPS = GameDefaults.FPS
         self.DT = 1 / self.FPS
-        self.SUB_STEPS = 10
+        self.SUB_STEPS = GameDefaults.SUB_STEPS
         self.clock = pygame.time.Clock()
 
 
 
         self.draw_options = pymunk.pygame_util.DrawOptions(self.WIN)
 
-        Level.current_level = 5
+        Level.current_level = 1
 
         levels.generate_levels()
 
@@ -106,7 +106,7 @@ class Game:
                 if path.contains_point(mouse):
                     terrains.append(terrain)
 
-            print(" " * 150, end="\r")
+            print(" " * 200, end="\r")
             print(pygame.mouse.get_pos(), [i for i in terrains], sep=" | ", end="\r")
 
         for _ in range(self.SUB_STEPS):

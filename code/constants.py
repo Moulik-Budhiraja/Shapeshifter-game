@@ -110,3 +110,7 @@ class Direction(Enum):
 
 class CollisionType:
     CHARACTER = 1
+
+class GameDefaults:
+    FPS = 60
+    SUB_STEPS = 10

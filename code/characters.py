@@ -8,6 +8,7 @@ import math
 import images
 import matplotlib.path as mplpath
 import terrain as ter
+import time
 
 class BaseCharacter:
     def __init__(self, space, pos: tuple, size: tuple):
@@ -32,6 +33,9 @@ class BaseCharacter:
         return pygame.Rect(self.x, self.y, self.width, self.height)
 
     def setup_physics(self):
+        pass
+
+    def pretransform(self):
         pass
 
     def post_transform(self):
@@ -64,10 +68,14 @@ class BaseCharacter:
         if self.type == type:
             return self
 
+        self.pretransform()
+
         new_character: BaseCharacter = CharacterTypes.get(type)
         
         if new_character is not None:
             new_character = new_character(self.space, helpers.transform_to_pymunk(self.x, self.y, self.width, self.height), (self.original_width, self.original_height))
+            
+            new_character.setup_physics()
 
             new_character.body.velocity = self.body.velocity
             new_character.body.angular_velocity = self.body.angular_velocity
@@ -127,12 +135,12 @@ class Blob(BaseCharacter):
         self.body = pymunk.Body()
         self.body.position = self.x, self.y
         self.shape = pymunk.Poly.create_box(self.body, (self.width, self.height))
-        self.shape.mass = 1
+        self.shape.mass = 0.5
         self.shape.friction = 0.90
         self.shape.elasticity = 0.2
         self.shape.collision_type = CollisionType.CHARACTER
 
-        self.jump_strength = 1.3
+        self.jump_strength = 1.2
         self.gravity = 3
 
         self.body.velocity_func = lambda body, gravity, damping, dt: pymunk.Body.update_velocity(body, (gravity[0], gravity[1] * self.gravity), damping, dt)
@@ -149,13 +157,13 @@ class Blob(BaseCharacter):
 
         if keys[pygame.K_LEFT]:
             if not self.body.velocity.x < -self.MAX_X_VELOCITY:
-                self.body.apply_impulse_at_local_point((-50, 0), (0, 15))
+                self.body.apply_impulse_at_local_point((-25, 0), (0, 15))
         if keys[pygame.K_RIGHT]:
             if not self.body.velocity.x > self.MAX_X_VELOCITY:
-                self.body.apply_impulse_at_local_point((50, 0), (0, 15))
+                self.body.apply_impulse_at_local_point((25, 0), (0, 15))
         if keys[pygame.K_UP]:
             if self._can_jump():
-                self.body.apply_impulse_at_local_point((0, -700 * self.jump_strength))
+                self.body.apply_impulse_at_local_point((0, -350 * self.jump_strength))
 
     def _can_jump(self):
         if self._in_air():
@@ -281,7 +289,7 @@ class Airplane(BaseCharacter):
         self.body = pymunk.Body()
         self.body.position = self.x, self.y
         self.shape = pymunk.Poly.create_box(self.body, (self.width, self.height))
-        self.shape.mass = 0.25
+        self.shape.mass = 1
         self.shape.friction = 0.99
         self.shape.elasticity = 0
         self.shape.collision_type = CollisionType.CHARACTER
@@ -351,6 +359,167 @@ class Spring(BaseCharacter):
         self.image = Fonts.CHARACTER.render("SPRING", True, Colors.WHITE)
         self.image = pygame.transform.scale(self.image, (self.width, self.height))
 
+    def setup_physics(self):
+        try:
+            self.space.remove(self.body, self.shape)
+        except AttributeError:
+            pass
+        except AssertionError:
+            pass
+
+        self.body = pymunk.Body()
+        self.body.position = self.x, self.y
+        self.shape = pymunk.Poly.create_box(self.body, (self.width, self.height))
+        self.shape.mass = 0.5
+        self.shape.friction = 1
+        self.shape.elasticity = 1
+        self.shape.collision_type = CollisionType.CHARACTER
+
+        self.gravity = 3
+        self.jump_strength = 2.2
+        
+        self.jump_charge = 0
+        self.charge_time = 1
+
+        self.body.velocity_func = lambda body, gravity, damping, dt: pymunk.Body.update_velocity(body, (gravity[0], gravity[1] * self.gravity), damping, dt)
+
+        self.space.add(self.body, self.shape)
+
+    def handle_movement(self, keys):
+        if self._in_air():
+            self.body.velocity = (self.body.velocity.x * 0.99, self.body.velocity.y)
+            self.body.angle = 0
+            self.body.angular_velocity = 0
+
+        if keys[pygame.K_DOWN]:
+            if self._can_jump():
+                if self.jump_charge < 1:
+                    self.jump_charge += 1 / GameDefaults.FPS / self.charge_time
+
+                else:
+                    self.jump_charge = 1
+
+        else:
+            if self.jump_charge > 0:
+                self.body.apply_impulse_at_local_point((0, -350 * self.jump_strength * self.jump_charge))
+                self.jump_charge = 0
+            
+
+
+    def _can_jump(self):
+        if self._in_air():
+            return False
+        
+        bottom = self.shape.bb.top
+        right = self.shape.bb.right
+        left = self.shape.bb.left
+
+        if self.body.angle < 0:
+            point1 = (right, bottom + self.width * math.sin(self.body.angle) + 1)
+            point2 = (right - self.width * math.cos(self.body.angle), bottom + 1)
+
+        else:
+            point1 = (left, bottom - self.width * math.sin(self.body.angle) + 1)
+            point2 = (left + self.width * math.cos(self.body.angle), bottom + 1)
+
+        
+        for terrain in Level.get_current_level().terrain:
+            path = mplpath.Path(terrain.polygon)
+            if type(terrain) != ter.Polygon:
+                if path.contains_point(point1) or path.contains_point(point2):
+                    return True
+            else:
+                if path.contains_point(point1) and path.contains_point(point2):
+                    return True
+
+
+
+    def _in_air(self):
+        bottom = self.shape.bb.top
+        right = self.shape.bb.right
+        left = self.shape.bb.left
+
+        if self.body.angle < 0:
+            point1 = (right, bottom + self.width * math.sin(self.body.angle) + 1)
+            point2 = (right - self.width * math.cos(self.body.angle), bottom + 1)
+
+        else:
+            point1 = (left, bottom - self.width * math.sin(self.body.angle) + 1)
+            point2 = (left + self.width * math.cos(self.body.angle), bottom + 1)
+
+        
+        for terrain in Level.get_current_level().terrain:
+            path = mplpath.Path(terrain.polygon)
+            if path.contains_point(point1) or path.contains_point(point2):
+                if terrain.jumpable:
+                    return False
+
+        return True
+
+    def pretransform(self):
+        if self.direction == 1:
+            self.body.velocity = (self.body.velocity.x + 0.001, self.body.velocity.y)
+        else:
+            self.body.velocity = (self.body.velocity.x - 0.001, self.body.velocity.y)
+
+    def post_transform(self):
+        if self.body.velocity.x > 0:
+            self.direction = 1
+        else:
+            self.direction = -1
+
+    def velocity_adjustments(self):
+        if self.body.angle > 0.523599: # 30 degrees
+            self.body.angular_velocity = -1.5
+        elif self.body.angle < -0.523599: 
+            self.body.angular_velocity = 1.5
+
+    def update_location(self):
+        self.x, self.y = helpers.transform_to_pygame(*self.body.position, self.width, self.height)
+
+    def _get_image(self):
+        return pygame.transform.rotate(self.image, math.degrees(-self.body.angle))
+
+    def draw(self, win):
+        image = self._get_image()
+        rect = image.get_rect()
+        rect.center = helpers.transform_to_pymunk(self.x, self.y + 2, self.width, self.height)
+
+        win.blit(image, rect)
+
+        if self.show_hitbox:
+            temp_surface = pygame.Surface((self.rect.width, self.rect.height), pygame.SRCALPHA, 32)
+            temp_surface = temp_surface.convert_alpha()
+            pygame.draw.rect(temp_surface, Colors.RED, (0, 0, self.rect.width, self.rect.height), 2)
+
+            win.blit(pygame.transform.rotate(temp_surface, math.degrees(-self.body.angle)), rect)
+
+            pygame.draw.circle(win, Colors.RED, self.body._get_position(), 2)
+
+
+            bottom = self.shape.bb.top
+            right = self.shape.bb.right
+            left = self.shape.bb.left
+
+            if self.body.angle < 0:
+                point1 = (right, bottom + self.width * math.sin(self.body.angle) + 1)
+                point2 = (right - self.width * math.cos(self.body.angle), bottom + 1)
+
+            else:
+                point1 = (left, bottom - self.width * math.sin(self.body.angle) + 1)
+                point2 = (left + self.width * math.cos(self.body.angle), bottom + 1)
+
+            pygame.draw.circle(win, Colors.GREEN, point1, 2)
+            pygame.draw.circle(win, Colors.GREEN, point2, 2)
+
+
+
+            if self.jump_charge == 1:
+                pygame.draw.rect(win, Colors.GREEN, (self.x + self.width * 1.3, self.y, 18, self.height))
+            else:
+                pygame.draw.rect(win, Colors.YELLOW, (self.x + self.width * 1.3, self.y + self.height - self.height * self.jump_charge, 18, self.height * self.jump_charge))
+
+            pygame.draw.rect(win, Colors.RED, (self.x + self.width * 1.3, self.y, 18, self.height), 2)
 
 class Weight(BaseCharacter):
     def __init__(self, space, pos: tuple, size: tuple):
